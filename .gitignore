@@ -1,0 +1,5 @@
+# Ignore cache and temporary files
+.cache/
+.thumbnails/
+*.log
+*.tmp
