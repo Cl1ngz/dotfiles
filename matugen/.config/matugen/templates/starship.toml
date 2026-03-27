@@ -1,0 +1,70 @@
+# Starship Matugen Theme
+format = """
+[](fg:{{colors.primary.default.hex}})\
+$directory\
+[](fg:{{colors.primary.default.hex}} bg:{{colors.secondary_container.default.hex}})\
+$git_branch\
+$git_status\
+[](fg:{{colors.secondary_container.default.hex}} bg:{{colors.tertiary_container.default.hex}})\
+$nodejs\
+$rust\
+$golang\
+$php\
+[](fg:{{colors.tertiary_container.default.hex}})\
+$fill\
+$time\
+\n$character"""
+
+[fill]
+symbol = " "
+
+[character]
+success_symbol = "[❯](bold {{colors.primary.default.hex}})"
+error_symbol = "[❯](bold {{colors.error.default.hex}})"
+
+[directory]
+style = "fg:{{colors.on_primary.default.hex}} bg:{{colors.primary.default.hex}}"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[git_branch]
+symbol = ""
+style = "fg:{{colors.on_secondary_container.default.hex}} bg:{{colors.secondary_container.default.hex}}"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "fg:{{colors.on_secondary_container.default.hex}} bg:{{colors.secondary_container.default.hex}}"
+format = '[[($all_status$ahead_behind )]($style)]($style)'
+
+[nodejs]
+symbol = ""
+style = "fg:{{colors.on_tertiary_container.default.hex}} bg:{{colors.tertiary_container.default.hex}}"
+format = '[ $symbol ($version) ]($style)'
+
+[rust]
+symbol = ""
+style = "fg:{{colors.on_tertiary_container.default.hex}} bg:{{colors.tertiary_container.default.hex}}"
+format = '[ $symbol ($version) ]($style)'
+
+[golang]
+symbol = ""
+style = "fg:{{colors.on_tertiary_container.default.hex}} bg:{{colors.tertiary_container.default.hex}}"
+format = '[ $symbol ($version) ]($style)'
+
+[php]
+symbol = ""
+style = "fg:{{colors.on_tertiary_container.default.hex}} bg:{{colors.tertiary_container.default.hex}}"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = true
+time_format = "%R"
+style = "fg:{{colors.on_surface_variant.default.hex}}"
+format = '[  $time ]($style)'

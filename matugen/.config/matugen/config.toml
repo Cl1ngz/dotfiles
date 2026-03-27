@@ -1,0 +1,44 @@
+[config]
+
+[templates.waybar]
+input_path = '~/.config/matugen/templates/waybar-colors.css'
+output_path = '~/.config/waybar/colors.css'
+
+[templates.rofi]
+input_path = '~/.config/matugen/templates/rofi-colors.rasi'
+output_path = '~/.config/rofi/colors.rasi'
+
+[templates.kitty]
+input_path = '/home/cl1ngz/.config/matugen/templates/kitty-colors.conf'
+output_path = '/home/cl1ngz/.config/kitty/themes/colors.conf'
+post_hook = "kitty +kitten themes --reload-in=all colors"
+
+[templates.hyprland]
+input_path = '~/.config/matugen/templates/hyprland-colors.conf'
+output_path = '~/.config/hypr/conf/colors.conf'
+
+[templates.dunst]
+input_path = '~/.config/matugen/templates/dunstrc-colors'
+output_path = '~/.config/dunst/dunstrc'
+post_hook = "killall dunst && dunst &"
+
+[templates.yazi]
+input_path = '/home/cl1ngz/.config/matugen/templates/yazi-theme.toml'
+output_path = '/home/cl1ngz/.config/yazi/theme.toml'
+
+[templates.starship]
+input_path = '~/.config/matugen/templates/starship.toml'
+output_path = '~/.config/starship.toml'
+
+[templates.gtk3]
+input_path = '/home/cl1ngz/.config/matugen/templates/gtk.css'
+output_path = '/home/cl1ngz/.config/gtk-3.0/gtk.css'
+
+[templates.gtk4]
+input_path = '/home/cl1ngz/.config/matugen/templates/gtk.css'
+output_path = '/home/cl1ngz/.config/gtk-4.0/gtk.css'
+
+# Optional: Also write to gtk-dark.css to be safe
+[templates.gtk4_dark]
+input_path = '/home/cl1ngz/.config/matugen/templates/gtk.css'
+output_path = '/home/cl1ngz/.config/gtk-4.0/gtk-dark.css'

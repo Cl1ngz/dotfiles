@@ -1,0 +1,7 @@
+* {
+<* for name, value in colors *>
+    {{ name | replace: "_", "-" }}: {{ value.default.hex }};
+<* endfor *>
+    // e6 f2 
+    bg-glass: {{ colors.surface_container.default.hex }}f2;
+}
