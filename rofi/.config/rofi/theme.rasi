@@ -1,0 +1,62 @@
+@import "share"
+
+window {
+    width:            600px;
+    background-color: @bg;       /* 90% transparent background */
+    border:           2px solid;
+    border-color:     @active;
+    border-radius:    16px;
+}
+
+mainbox {
+    padding:          20px;
+    background-color: transparent;
+    children:         [ inputbar, listview ];
+}
+
+inputbar {
+    margin:           0 0 10px 0;
+    padding:          12px;
+    background-color: @bg-alt;   /* Slightly more solid search area */
+    border-radius:    12px;
+    children:         [ prompt, entry ];
+}
+
+prompt {
+    font:             "JetBrains Mono Nerd Font Bold 12";
+    text-color:       @active;
+}
+
+entry {
+    placeholder:       "Search...";
+    placeholder-color: @on-surface-variant;
+    text-color:        @fg;
+    padding:           0 0 0 10px;
+}
+
+listview {
+    lines:            8;
+    spacing:          8px;
+    fixed-height:     false;
+    scrollbar:        false;
+}
+
+element {
+    padding:          12px;
+    border-radius:    10px;
+}
+
+element selected {
+    background-color: @active;
+    text-color:       @surface; /* Dark text on bright accent */
+}
+
+element-icon {
+    size:             32px;
+    padding:          0 12px 0 0;
+}
+
+element-text {
+    vertical-align:   0.5;
+    text-color:       inherit;
+}

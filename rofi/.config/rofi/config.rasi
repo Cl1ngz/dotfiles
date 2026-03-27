@@ -1,0 +1,14 @@
+configuration {
+    modi: "drun,run,filebrowser,window";
+    show-icons: true;
+    display-drun: "󰀻 Apps";
+    display-run: "󰑮 Run";
+    display-filebrowser: "󰉋 Files";
+    drun-display-format: "{name}";
+    sort: true;
+  sorting-method: "fzf";
+  matching: "prefix";
+}
+
+@import "share"
+@theme "theme"

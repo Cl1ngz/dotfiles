@@ -1,0 +1,62 @@
+/********************
+ * General Bar Styles
+ ********************/
+
+window#waybar {
+    background: rgba(0,0,0,0);
+    color: #f6f7fc;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.modules-left{
+    background-color: rgba(26, 27, 38, 0.75);
+    border-radius: 20px;
+}
+
+#custom-launch_wofi,
+#custom-launch_joplin,
+#custom-launch_superproductivity,
+#custom-launch_libreoffice {
+    font-size: 20px; /* Icons size */
+    margin: 0 15px; /* Space between icons */
+    color: white;
+    transition: transform 0.3s ease, background-color 0.2s ease;
+    padding: 10px;
+    border-radius: 10px;
+
+}
+
+/* Icon hover effect similar to iPad dock */
+#custom-launch_wofi:hover,
+#custom-launch_joplin:hover,
+#custom-launch_superproductivity:hover,
+#custom-launch_libreoffice:hover {
+    background-color: rgba(255, 255, 255, 0.2); /* Add a light background on hover */
+}
+
+/***********************
+ * Taskbar (center icons)
+ ***********************/
+
+#taskbar {
+    background-color: rgba(26, 27, 38, 0.75);
+    border-radius: 20px;
+}
+
+#taskbar button {
+    background: none;
+    border: none;
+    margin: 0 2px; /* Space between taskbar icons */
+    font-size: 24px; /* Taskbar icon size */
+    color: white;
+    transition: transform 0.3s ease, background-color 0.2s ease;
+}
+
+#taskbar button:hover {
+    /* transform: scale(1.2); Hover effect for taskbar icons */
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}

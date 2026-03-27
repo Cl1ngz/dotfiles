@@ -1,0 +1,24 @@
+new_tab 1. Terminal
+cd ~/Documents/
+# launch bash -c 'nvim .'
+# launch bash
+launch bash -c 'eza --hyperlink --icons -a && exec bash'
+enabled_layouts tall:bias=50;full_size=1
+layout tall
+
+new_tab 2. Editor
+cd ~/Documents/
+launch bash -c 'eza --hyperlink --icons -a && nvim . && exec bash' 
+# launch bash
+enabled_layouts tall:bias=50;full_size=1
+layout tall
+
+new_tab 3. Something
+cd ~/Documents/
+launch bash -c 'eza --hyperlink --icons -a && exec bash'
+# launch bash
+enabled_layouts tall:bias=50;full_size=1
+layout tall
+
+
+

@@ -1,0 +1,57 @@
+{
+  "layer": "top",
+  "position": "bottom",
+  "mod": "dock",
+  "exclusive": true,
+  "passthrough": false,
+  "gtk-layer-shell": true,
+  "height": 15,
+  "modules-left": [
+    "custom/launch_wofi",
+    "custom/launch_joplin",
+    "custom/launch_libreoffice",
+    "custom/launch_superproductivity"
+  ],
+  "modules-center": ["wlr/taskbar"],
+
+  "modules-right": [],
+
+  "include": [],
+
+  "custom/launch_wofi": {
+    "format": "󱗼",
+    "on-click": "sh -c '(sleep 0.5s; pkill wofi || wofi -c ~/.config/HyprV/wofi/config-lmenu)' & disown",
+    "tooltip": false
+  },
+
+  "custom/launch_joplin": {
+    "format": "󰠮",
+    "on-click": "joplin-desktop",
+    "tooltip-format": "Joplin"
+  },
+  
+  "custom/launch_libreoffice": {
+    "format": "󰈙",
+    "on-click": "libreoffice",
+    "tooltip-format": "Libreoffice"
+  },
+  
+  "custom/launch_superproductivity": {
+    "format": "",
+    "on-click": "superproductivity",
+    "tooltip-format": "SuperProductivity"
+  },
+
+
+
+
+  "wlr/taskbar": {
+    "format": "{icon}",
+    "icon-size": 24,
+    "all-outputs": true,
+    "tooltip-format": "{name} - {title}",
+    "on-click": "activate",
+    "on-click-middle": "close",
+    "ignore-list": ["wofi"]
+  }
+}

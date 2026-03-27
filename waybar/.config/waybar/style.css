@@ -1,0 +1,115 @@
+@import "colors.css";
+
+/* Mapping Matugen colors to your variables */
+@define-color bg_main @surface;
+@define-color fg_main @on_surface;
+@define-color fg_muted @on_surface_variant;
+@define-color accent @primary;
+@define-color accent_fg @on_primary;
+@define-color warn @tertiary;
+@define-color crit @error;
+
+/* Use surface_container_high for a subtle, visible hover state */
+@define-color hover_bg @surface_container_high;
+
+* {
+  border: none;
+  border-radius: 0;
+  font-family: "JetBrainsMono Nerd Font";
+  font-weight: bold;
+  font-size: 16px;
+  min-height: 0;
+  background-color: transparent;
+}
+
+/* ==============================
+   WAYBAR WINDOW
+============================== */
+window#waybar {
+  background-color: alpha(@bg_main, 0.7);
+  color: @fg_main;
+}
+
+/* ==============================
+   TOOLTIP
+============================== */
+tooltip {
+  background: @surface_container;
+  opacity: 1;
+  border-radius: 10px;
+  border-width: 2px;
+  border-style: solid;
+  border-color: @accent;
+}
+
+tooltip label {
+  color: @fg_main;
+}
+
+/* ==============================
+   WORKSPACES
+============================== */
+#workspaces button {
+  padding: 5px;
+  color: @fg_muted;
+  margin-right: 5px;
+}
+
+#workspaces button.active {
+  background: @accent;
+  color: @accent_fg;
+  border-radius: 10px;
+}
+
+#workspaces button:hover {
+  background: @hover_bg;
+  color: @accent;
+  border-radius: 10px;
+}
+
+/* ==============================
+   MODULES (Including Mic, Volume, etc.)
+============================== */
+#custom-lock_screen,
+#custom-power_btn,
+#custom-power_profile,
+#cpu,
+#pulseaudio,
+#backlight,
+#battery,
+#tray,
+#clock,
+#workspaces,
+#custom-music {
+  padding: 0px 8px;
+  margin: 0px 3px;
+  transition: background-color 0.2s ease;
+}
+
+/* Unified Hover State for all modules */
+#custom-lock_screen:hover,
+#custom-power_btn:hover,
+#custom-power_profile:hover,
+#cpu:hover,
+#pulseaudio:hover,
+#backlight:hover,
+#battery:hover,
+#clock:hover,
+#custom-music:hover {
+  background-color: @hover_bg;
+  border-radius: 10px;
+}
+
+#temperature.critical {
+  color: @crit;
+}
+
+/* Specific Style for Paused Music */
+#custom-music.paused {
+  color: @warn;
+  opacity: 0.7;
+}
+
+#custom-music.playing {
+  color: @accent;
+}

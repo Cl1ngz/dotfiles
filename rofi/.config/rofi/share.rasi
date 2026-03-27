@@ -1,0 +1,17 @@
+@import "colors.rasi"
+
+* {
+    /* Mapping Matugen colors */
+    bg:      @bg-glass;           /* Frosted container color */
+    bg-alt:  @surface-container-high; 
+    fg:      @on-surface;
+    active:  @primary;
+    urgent:  @error;
+    
+    background-color: transparent;
+    text-color: @fg;
+
+    margin: 0;
+    padding: 0;
+    spacing: 0;
+}
