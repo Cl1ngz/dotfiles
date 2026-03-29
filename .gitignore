@@ -22,12 +22,15 @@
 **/current_wall
 lazy-lock.json
 
-# Ignore all of Calibre junk 
+# Ignore all of Calibre's dynamic data
 calibre/.config/calibre/**/*
 
-# Allow ONLY your "Rice" and configuration
+# Allow the actual Rice and Config files
 !calibre/.config/calibre/gui.json
 !calibre/.config/calibre/gui.py.json
 !calibre/.config/calibre/global.py.json
 !calibre/.config/calibre/customize.py.json
-!calibre/.config/calibre/viewer/
+!calibre/.config/calibre/viewer-webengine.json
+
+# Ignore the viewer's history/annotation folder specifically
+calibre/.config/calibre/viewer/annots/

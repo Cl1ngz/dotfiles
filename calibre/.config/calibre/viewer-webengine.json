@@ -1,0 +1,386 @@
+{
+  "geometry-of-llm-settings-dialog-geometry": {
+    "frame_geometry": {
+      "height": 508,
+      "width": 576,
+      "x": 178,
+      "y": 226
+    },
+    "full_screened": false,
+    "geometry": {
+      "height": 508,
+      "width": 576,
+      "x": 178,
+      "y": 226
+    },
+    "maximized": true,
+    "normal_geometry": {
+      "height": 508,
+      "width": 576,
+      "x": 178,
+      "y": 226
+    },
+    "qt": {
+      "__class__": "bytearray",
+      "__value__": "AdnQywADAAAAAACyAAAA4gAAAvEAAALdAAAAsgAAAOIAAALxAAAC3QAAAAACAAAAB4AAAACyAAAA4gAAAvEAAALd"
+    },
+    "screen": {
+      "depth": 32,
+      "device_pixel_ratio": 1.0,
+      "geometry_in_logical_pixels": {
+        "height": 1080,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      },
+      "index_in_screens_list": 0,
+      "manufacturer": "Najing CEC Panda FPD Technology CO. ltd",
+      "model": "0x004D",
+      "name": "eDP-1",
+      "serial": "",
+      "size_in_logical_pixels": {
+        "height": 1080,
+        "width": 1920
+      },
+      "virtual_geometry": {
+        "height": 1080,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      }
+    }
+  },
+  "geometry-of-main_window_geometry": {
+    "frame_geometry": {
+      "height": 1039,
+      "width": 952,
+      "x": 0,
+      "y": 0
+    },
+    "full_screened": false,
+    "geometry": {
+      "height": 1039,
+      "width": 952,
+      "x": 0,
+      "y": 0
+    },
+    "maximized": true,
+    "normal_geometry": {
+      "height": 1039,
+      "width": 952,
+      "x": 0,
+      "y": 0
+    },
+    "qt": {
+      "__class__": "bytearray",
+      "__value__": "AdnQywADAAAAAAAAAAAAAAAAA7cAAAQOAAAAAAAAAAAAAAO3AAAEDgAAAAACAAAAB4AAAAAAAAAAAAAAA7cAAAQO"
+    },
+    "screen": {
+      "depth": 32,
+      "device_pixel_ratio": 1.0,
+      "geometry_in_logical_pixels": {
+        "height": 1080,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      },
+      "index_in_screens_list": 0,
+      "manufacturer": "Najing CEC Panda FPD Technology CO. ltd",
+      "model": "0x004D",
+      "name": "eDP-1",
+      "serial": "",
+      "size_in_logical_pixels": {
+        "height": 1080,
+        "width": 1920
+      },
+      "virtual_geometry": {
+        "height": 1080,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      }
+    }
+  },
+  "geometry-of-viewer_image_popup_geometry": {
+    "frame_geometry": {
+      "height": 516,
+      "width": 472,
+      "x": 497,
+      "y": 439
+    },
+    "full_screened": false,
+    "geometry": {
+      "height": 516,
+      "width": 472,
+      "x": 497,
+      "y": 439
+    },
+    "maximized": true,
+    "normal_geometry": {
+      "height": 516,
+      "width": 472,
+      "x": 497,
+      "y": 439
+    },
+    "qt": {
+      "__class__": "bytearray",
+      "__value__": "AdnQywADAAAAAAHxAAABtwAAA8gAAAO6AAAB8QAAAbcAAAPIAAADugAAAAACAAAAB4AAAAHxAAABtwAAA8gAAAO6"
+    },
+    "screen": {
+      "depth": 32,
+      "device_pixel_ratio": 1.0,
+      "geometry_in_logical_pixels": {
+        "height": 1080,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      },
+      "index_in_screens_list": 0,
+      "manufacturer": "Najing CEC Panda FPD Technology CO. ltd",
+      "model": "0x004D",
+      "name": "eDP-1",
+      "serial": "",
+      "size_in_logical_pixels": {
+        "height": 1080,
+        "width": 1920
+      },
+      "virtual_geometry": {
+        "height": 1080,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      }
+    }
+  },
+  "llm_lookup_tab_index": 1,
+  "main_window_state": {
+    "__class__": "bytearray",
+    "__value__": "AAAA/wAAAAH9AAAAAgAAAAAAAAEAAAAED/wCAAAAAvsAAAAQAHQAbwBjAC0AZABvAGMAawEAAAAAAAAEDwAAAIoA////+wAAABYAcwBlAGEAcgBjAGgALQBkAG8AYwBrAAAAAAD/////AAAAmgD///8AAAABAAACWAAABBD8AgAAAAT7AAAAFgBsAG8AbwBrAHUAcAAtAGQAbwBjAGsAAAAAAAAABBAAAAChAP////sAAAAcAGIAbwBvAGsAbQBhAHIAawBzAC0AZABvAGMAawAAAAAA/////wAAAPIA////+wAAABwAaQBuAHMAcABlAGMAdABvAHIALQBkAG8AYwBrAAAAAAAAAAQQAAAAFAD////7AAAAHgBoAGkAZwBoAGwAaQBnAGgAdABzAC0AZABvAGMAawAAAAAA/////wAAANcA////AAACsgAABA8AAAAEAAAABAAAAAgAAAAI/AAAAAEAAAAAAAAAAQAAAB4AYQBjAHQAaQBvAG4AcwBfAHQAbwBvAGwAYgBhAHICAAAAAP////8AAAAAAAAAAA=="
+  },
+  "old_prefs_migrated": true,
+  "session_data": {
+    "controls_help_shown_count": 2,
+    "standalone_font_settings": {},
+    "standalone_misc_settings": {
+      "remember_last_read": true,
+      "remember_window_geometry": false,
+      "save_annotations_in_ebook": true,
+      "singleinstance": false
+    },
+    "standalone_recently_opened": [
+      {
+        "key": "/home/cl1ngz/Documents/Notes/Main_Valut/TODO.md",
+        "pathtoebook": "/home/cl1ngz/Documents/Notes/Main_Valut/TODO.md",
+        "timestamp": "2026-03-26T00:39:22.710Z",
+        "title": "TODO"
+      },
+      {
+        "key": "/home/cl1ngz/Documents/Programing/Python/PSIO/ps1/psio.odt",
+        "pathtoebook": "/home/cl1ngz/Documents/Programing/Python/PSIO/ps1/psio.odt",
+        "timestamp": "2026-03-20T20:51:50.463Z",
+        "title": "psio"
+      },
+      {
+        "key": "/home/cl1ngz/Downloads/Projekt Sieci Labby.pdf",
+        "pathtoebook": "/home/cl1ngz/Downloads/Projekt Sieci Labby.pdf",
+        "timestamp": "2026-03-04T18:00:34.485Z",
+        "title": "Projekt Sieci Laby"
+      },
+      {
+        "authors": [
+          "John Flanagan"
+        ],
+        "key": "/home/cl1ngz/Documents/xdp/Flanagan, John/Zwiadowcy 10. Cesarz Nihon-Ja/Zwiadowcy 10. Cesarz Nihon-Ja - John Flanagan.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/xdp/Flanagan, John/Zwiadowcy 10. Cesarz Nihon-Ja/Zwiadowcy 10. Cesarz Nihon-Ja - John Flanagan.epub",
+        "timestamp": "2026-02-07T01:55:16.115Z",
+        "title": "Zwiadowcy 10. Cesarz Nihon-Ja"
+      },
+      {
+        "authors": [
+          "Joe Abercrombie"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Joe Abercrombie/Ostateczny argument krolow (537)/Ostateczny argument krolow - Joe Abercrombie.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Joe Abercrombie/Ostateczny argument krolow (537)/Ostateczny argument krolow - Joe Abercrombie.epub",
+        "timestamp": "2026-02-06T23:59:37.591Z",
+        "title": "Ostateczny argument królów"
+      },
+      {
+        "authors": [
+          "Erikson Steven"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Erikson Steven/Ogrody Ksiezyca (445)/Ogrody Ksiezyca - Erikson Steven.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Erikson Steven/Ogrody Ksiezyca (445)/Ogrody Ksiezyca - Erikson Steven.epub",
+        "timestamp": "2026-02-06T23:03:53.899Z",
+        "title": "Malazańska Księga Poległych - 01 - Ogrody Księżyca (1999)"
+      },
+      {
+        "authors": [
+          "Erikson Steven"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Erikson Steven/Okaleczony Bog. Tom 1. Szklana pustynia (444)/Okaleczony Bog. Tom 1. Szklana pustynia - Erikson Steven.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Erikson Steven/Okaleczony Bog. Tom 1. Szklana pustynia (444)/Okaleczony Bog. Tom 1. Szklana pustynia - Erikson Steven.epub",
+        "timestamp": "2026-02-06T23:03:48.343Z",
+        "title": "Malazańska Księga Poległych 10.1 - Okaleczony Bóg. Tom 1. Szklana pustynia (2011)"
+      },
+      {
+        "authors": [
+          "Steven Erikson"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Erikson Steven/Przyplywy Nocy. Tom 1. Siodme Zamkniecie (459)/Przyplywy Nocy. Tom 1. Siodme Zamkniecie - Erikson Steven.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Erikson Steven/Przyplywy Nocy. Tom 1. Siodme Zamkniecie (459)/Przyplywy Nocy. Tom 1. Siodme Zamkniecie - Erikson Steven.epub",
+        "timestamp": "2026-02-06T23:03:06.413Z",
+        "title": "Przypływy Nocy. Siódme Zamknięcie"
+      },
+      {
+        "authors": [
+          "John Flanagan"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/John Flanagan/Zwiadowcy_ Wczesne lata 2. Bitwa na wrzosowiskach (392)/Zwiadowcy_ Wczesne lata 2. Bitwa na wrzoso - John Flanagan.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/John Flanagan/Zwiadowcy_ Wczesne lata 2. Bitwa na wrzosowiskach (392)/Zwiadowcy_ Wczesne lata 2. Bitwa na wrzoso - John Flanagan.epub",
+        "timestamp": "2026-02-06T21:53:04.509Z",
+        "title": "Zwiadowcy: Wczesne lata 2. Bitwa na wrzosowiskach"
+      },
+      {
+        "authors": [
+          "Jeff Vandermeer"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Jeff Vandermeer/Ukojenie (330)/Ukojenie - Jeff Vandermeer.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Jeff Vandermeer/Ukojenie (330)/Ukojenie - Jeff Vandermeer.epub",
+        "timestamp": "2026-02-06T20:52:18.569Z",
+        "title": "Ukojenie"
+      },
+      {
+        "authors": [
+          "Tad Williams"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Tad Williams/Empire of Grass (318)/Empire of Grass - Tad Williams.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Tad Williams/Empire of Grass (318)/Empire of Grass - Tad Williams.epub",
+        "timestamp": "2026-02-06T20:41:39.141Z",
+        "title": "Empire of Grass"
+      },
+      {
+        "authors": [
+          "Mark Lawrence"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Mark Lawrence/Krol Cierni (309)/Krol Cierni - Mark Lawrence.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Mark Lawrence/Krol Cierni (309)/Krol Cierni - Mark Lawrence.epub",
+        "timestamp": "2026-02-06T20:36:09.102Z",
+        "title": "Król Cierni"
+      },
+      {
+        "authors": [
+          "Mark Lawrence"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Mark Lawrence/Ksiaze cierni (307)/Ksiaze cierni - Mark Lawrence.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Mark Lawrence/Ksiaze cierni (307)/Ksiaze cierni - Mark Lawrence.epub",
+        "timestamp": "2026-02-06T20:34:49.080Z",
+        "title": "Książę cierni"
+      },
+      {
+        "authors": [
+          "Mark Lawrence"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Mark Lawrence/Ksiaze cierni (306)/Ksiaze cierni - Mark Lawrence.original_epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Mark Lawrence/Ksiaze cierni (306)/Ksiaze cierni - Mark Lawrence.original_epub",
+        "timestamp": "2026-02-06T20:34:35.505Z",
+        "title": "Ksiaze cierni"
+      },
+      {
+        "authors": [
+          "Michael James Sullivan"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Michael James Sullivan/Smierc Dulgath (301)/Smierc Dulgath - Michael James Sullivan.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Michael James Sullivan/Smierc Dulgath (301)/Smierc Dulgath - Michael James Sullivan.epub",
+        "timestamp": "2026-02-06T20:30:07.636Z",
+        "title": "Śmierć Dulgath"
+      },
+      {
+        "authors": [
+          "Sanderson Brandon"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Sanderson Brandon/Tancerka krawedzi (254)/Tancerka krawedzi - Sanderson Brandon.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Sanderson Brandon/Tancerka krawedzi (254)/Tancerka krawedzi - Sanderson Brandon.epub",
+        "timestamp": "2026-02-06T19:38:28.515Z",
+        "title": "Tancerka krawędzi"
+      },
+      {
+        "authors": [
+          "King Stephen"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Stephen King/Powolanie Trojki (241)/Powolanie Trojki - Stephen King.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Stephen King/Powolanie Trojki (241)/Powolanie Trojki - Stephen King.epub",
+        "timestamp": "2026-02-06T19:21:53.024Z",
+        "title": "MW2 - Powołanie trójki"
+      },
+      {
+        "authors": [
+          "Robin Hobb"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Robin Hobb/Przeznaczenie Blazna (234)/Przeznaczenie Blazna - Robin Hobb.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Robin Hobb/Przeznaczenie Blazna (234)/Przeznaczenie Blazna - Robin Hobb.epub",
+        "timestamp": "2026-02-06T19:21:37.274Z",
+        "title": "6. Przeznaczenie Błazna"
+      },
+      {
+        "authors": [
+          "Robin Hobb"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Robin Hobb/Misja Blazna (235)/Misja Blazna - Robin Hobb.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Robin Hobb/Misja Blazna (235)/Misja Blazna - Robin Hobb.epub",
+        "timestamp": "2026-02-06T19:13:38.146Z",
+        "title": "4. Misja Błazna"
+      },
+      {
+        "authors": [
+          "Robin Hobb"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Robin Hobb/5. Zlocisty blazen (233)/5. Zlocisty blazen - Robin Hobb.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Robin Hobb/5. Zlocisty blazen (233)/5. Zlocisty blazen - Robin Hobb.epub",
+        "timestamp": "2026-02-06T18:42:26.761Z",
+        "title": "5. Złocisty błazen"
+      },
+      {
+        "authors": [
+          "Fonda Lee"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Fonda Lee/Wojna o jadeit (230)/Wojna o jadeit - Fonda Lee.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Fonda Lee/Wojna o jadeit (230)/Wojna o jadeit - Fonda Lee.epub",
+        "timestamp": "2025-11-28T22:41:05.799Z",
+        "title": "Wojna o jadeit"
+      },
+      {
+        "authors": [
+          "Fonda Lee"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Fonda Lee/Miasto Jadeitu (229)/Miasto Jadeitu - Fonda Lee.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Fonda Lee/Miasto Jadeitu (229)/Miasto Jadeitu - Fonda Lee.epub",
+        "timestamp": "2025-11-28T22:40:59.458Z",
+        "title": "Miasto Jadeitu"
+      },
+      {
+        "authors": [
+          "Fonda Lee"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Fonda Lee/Dziedzictwo Jadeitu (228)/Dziedzictwo Jadeitu - Fonda Lee.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Fonda Lee/Dziedzictwo Jadeitu (228)/Dziedzictwo Jadeitu - Fonda Lee.epub",
+        "timestamp": "2025-11-28T22:40:50.235Z",
+        "title": "Dziedzictwo Jadeitu"
+      },
+      {
+        "key": "/home/cl1ngz/Documents/Other/ARCHItektura2.odt",
+        "pathtoebook": "/home/cl1ngz/Documents/Other/ARCHItektura2.odt",
+        "timestamp": "2025-11-03T09:04:34.808Z",
+        "title": "ARCHItektura2"
+      },
+      {
+        "authors": [
+          "Ian Cameron Esslemont"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Ian Cameron Esslemont/Powrot Karmazynowej Gwardii tom 1 (227)/Powrot Karmazynowej Gwardii tom 1 - Ian Cameron Esslemont.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Ian Cameron Esslemont/Powrot Karmazynowej Gwardii tom 1 (227)/Powrot Karmazynowej Gwardii tom 1 - Ian Cameron Esslemont.epub",
+        "timestamp": "2025-10-22T18:37:23.857Z",
+        "title": "Powrót Karmazynowej Gwardii tom 1"
+      }
+    ]
+  }
+}

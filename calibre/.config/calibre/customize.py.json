@@ -1,0 +1,19 @@
+{
+  "disabled_plugins": {
+    "__class__": "set",
+    "__value__": []
+  },
+  "enabled_plugins": {
+    "__class__": "set",
+    "__value__": []
+  },
+  "filetype_mapping": {},
+  "plugin_customization": {},
+  "plugins": {
+    "DeDRM": "/home/cl1ngz/.config/calibre/plugins/DeDRM.zip",
+    "Ebook Translator": "/home/cl1ngz/.config/calibre/plugins/Ebook Translator.zip",
+    "Goodreads": "/home/cl1ngz/.config/calibre/plugins/Goodreads.zip",
+    "Kobo Metadata": "/home/cl1ngz/.config/calibre/plugins/Kobo Metadata.zip",
+    "LubimyCzytac": "/home/cl1ngz/.config/calibre/plugins/LubimyCzytac.zip"
+  }
+}
