@@ -53,7 +53,7 @@ return {
     -- Configure lualine with modified theme for Dragon style
     lualine.setup({
       options = {
-        theme = my_lualine_theme,
+        theme = "rose-pine",
       },
       sections = {
         lualine_x = {

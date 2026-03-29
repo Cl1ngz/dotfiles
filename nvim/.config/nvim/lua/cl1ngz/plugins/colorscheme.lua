@@ -1,49 +1,35 @@
 return {
-  "ribru17/bamboo.nvim",
-  lazy = false,
+  "rose-pine/neovim",
+  name = "rose-pine",
   priority = 1000,
   config = function()
-    require("bamboo").setup({
-      style = "multiplex", -- Choose between 'vulgaris' (regular), 'multiplex' (greener), and 'light'
-      toggle_style_key = nil, -- Keybind to toggle theme style. Leave it nil to disable it, or set it to a string, e.g. "<leader>ts"
-      toggle_style_list = { "vulgaris", "multiplex", "light" }, -- List of styles to toggle between
-      transparent = false, -- Show/hide background
-      dim_inactive = false, -- Dim inactive windows/buffers
-      term_colors = true, -- Change terminal color as per the selected theme style
-      ending_tildes = false, -- Show the end-of-buffer tildes. By default they are hidden
-      cmp_itemkind_reverse = false, -- reverse item kind highlights in cmp menu
+    require("rose-pine").setup({
+      variant = "main", -- options: "main", "moon", "dawn", or "auto"
+      dark_variant = "main", -- variant if system is dark
+      dim_inactive_windows = false,
+      extend_background_behind_borders = true,
 
-      -- Change code style ---
-      -- Options are anything that can be passed to the `vim.api.nvim_set_hl` table
-      -- You can also configure styles with a string, e.g. keywords = 'italic,bold'
-      code_style = {
-        comments = { italic = true },
-        conditionals = { italic = true },
-        keywords = {},
-        functions = {},
-        namespaces = { italic = true },
-        parameters = { italic = true },
-        strings = {},
-        variables = {},
+      enable = {
+        terminal = true,
+        legacy_highlights = true,
+        migrations = true,
       },
 
-      -- Lualine options --
-      lualine = {
-        transparent = false, -- lualine center bar transparency
+      styles = {
+        bold = true,
+        italic = true,
+        transparency = false, -- set to true if you want Hyprland transparency
       },
 
-      -- Custom Highlights --
-      colors = {}, -- Override default colors
-      highlights = {}, -- Override highlight groups
-
-      -- Plugins Config --
-      diagnostics = {
-        darker = false, -- darker colors for diagnostic
-        undercurl = true, -- use undercurl instead of underline for diagnostics
-        background = true, -- use background color for virtual text
+      highlight_groups = {
+        -- Overrides to match your diagnostic preferences
+        DiagnosticUnderlineError = { undercurl = true },
+        DiagnosticUnderlineWarn = { undercurl = true },
+        DiagnosticUnderlineHint = { undercurl = true },
+        DiagnosticUnderlineInfo = { undercurl = true },
       },
     })
-    require("bamboo").load()
-    vim.cmd("colorscheme bamboo")
+
+    vim.cmd("colorscheme rose-pine")
   end,
 }
