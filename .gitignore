@@ -3,3 +3,13 @@
 .thumbnails/
 *.log
 *.tmp
+
+# Ignore Matugen generated colors/themes
+**/colors.css
+**/colors.rasi
+**/colors.conf
+**/theme.toml
+**/starship.toml
+**/dunstrc
+**/gtk.css
+**/gtk-dark.css

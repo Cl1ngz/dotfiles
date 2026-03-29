@@ -30,9 +30,8 @@ ueberzug_offset = [ 0, 0, 0, 0 ]
 
 [opener]
 edit = [
-	{ run = "${EDITOR:-vi} %s", desc = "$EDITOR",      for = "unix", block = true },
-	{ run = "code %s",          desc = "code",         for = "windows", orphan = true },
-	{ run = "code -w %s",       desc = "code (block)", for = "windows", block = true },
+    { run = 'kitty @ launch --type=tab --cwd=current nvim "$@"', desc = "NVIM (Tab)", for = "linux", block = false },
+    { run = '${EDITOR:-vi} %s', desc = "$EDITOR", for = "unix", block = true },
 ]
 play = [
   { run = 'vlc "$@"', desc = "VLC", for = "linux", orphan = true },

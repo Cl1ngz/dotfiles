@@ -1,16 +1,16 @@
 # Starship Matugen Theme
 format = """
-[](fg:#c2c1ff)\
+[](fg:#ffb691)\
 $directory\
-[](fg:#c2c1ff bg:#464559)\
+[](fg:#ffb691 bg:#5c4032)\
 $git_branch\
 $git_status\
-[](fg:#464559 bg:#603c50)\
+[](fg:#5c4032 bg:#4c481c)\
 $nodejs\
 $rust\
 $golang\
 $php\
-[](fg:#603c50)\
+[](fg:#4c481c)\
 $fill\
 $time\
 \n$character"""
@@ -19,11 +19,11 @@ $time\
 symbol = " "
 
 [character]
-success_symbol = "[❯](bold #c2c1ff)"
+success_symbol = "[❯](bold #ffb691)"
 error_symbol = "[❯](bold #ffb4ab)"
 
 [directory]
-style = "fg:#2b2a60 bg:#c2c1ff"
+style = "fg:#542202 bg:#ffb691"
 format = "[ $path ]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
@@ -36,35 +36,35 @@ truncation_symbol = "…/"
 
 [git_branch]
 symbol = ""
-style = "fg:#e3e0f9 bg:#464559"
+style = "fg:#ffdbcb bg:#5c4032"
 format = '[ $symbol $branch ]($style)'
 
 [git_status]
-style = "fg:#e3e0f9 bg:#464559"
+style = "fg:#ffdbcb bg:#5c4032"
 format = '[[($all_status$ahead_behind )]($style)]($style)'
 
 [nodejs]
 symbol = ""
-style = "fg:#ffd8eb bg:#603c50"
+style = "fg:#ece4aa bg:#4c481c"
 format = '[ $symbol ($version) ]($style)'
 
 [rust]
 symbol = ""
-style = "fg:#ffd8eb bg:#603c50"
+style = "fg:#ece4aa bg:#4c481c"
 format = '[ $symbol ($version) ]($style)'
 
 [golang]
 symbol = ""
-style = "fg:#ffd8eb bg:#603c50"
+style = "fg:#ece4aa bg:#4c481c"
 format = '[ $symbol ($version) ]($style)'
 
 [php]
 symbol = ""
-style = "fg:#ffd8eb bg:#603c50"
+style = "fg:#ece4aa bg:#4c481c"
 format = '[ $symbol ($version) ]($style)'
 
 [time]
 disabled = true
 time_format = "%R"
-style = "fg:#c8c5d0"
+style = "fg:#d7c2b9"
 format = '[  $time ]($style)'
