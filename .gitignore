@@ -22,11 +22,12 @@
 **/current_wall
 lazy-lock.json
 
-# Ignore all of Calibre's junk
+# Ignore all of Calibre junk 
 calibre/.config/calibre/**/*
 
-# Allow ONLY these specific config files
+# Allow ONLY your "Rice" and configuration
 !calibre/.config/calibre/gui.json
-!calibre/.config/calibre/global.py
-!calibre/.config/calibre/viewer.json
-!calibre/.config/calibre/resources/
+!calibre/.config/calibre/gui.py.json
+!calibre/.config/calibre/global.py.json
+!calibre/.config/calibre/customize.py.json
+!calibre/.config/calibre/viewer/
