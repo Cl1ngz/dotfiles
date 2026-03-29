@@ -7,9 +7,16 @@
 # Ignore Matugen generated colors/themes
 **/colors.css
 **/colors.rasi
-**/colors.conf
 **/theme.toml
+# starship prompt
 **/starship.toml
+# dunst notifications
 **/dunstrc
+# gtk
 **/gtk.css
 **/gtk-dark.css
+# Ignore Kitty's active theme state
+**/colors.conf
+**/current-theme.conf
+# Ignore active wallpaper symlink
+**/current_wall
