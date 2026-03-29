@@ -20,3 +20,4 @@
 **/current-theme.conf
 # Ignore active wallpaper symlink
 **/current_wall
+lazy-lock.json
