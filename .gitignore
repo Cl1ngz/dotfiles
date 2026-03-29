@@ -21,3 +21,12 @@
 # Ignore active wallpaper symlink
 **/current_wall
 lazy-lock.json
+
+# Ignore all of Calibre's junk
+calibre/.config/calibre/**/*
+
+# Allow ONLY these specific config files
+!calibre/.config/calibre/gui.json
+!calibre/.config/calibre/global.py
+!calibre/.config/calibre/viewer.json
+!calibre/.config/calibre/resources/

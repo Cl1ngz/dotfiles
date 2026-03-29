@@ -59,3 +59,5 @@ alias displayFilesFind="find . -type f -exec sh -c 'echo \"FILE: \$1\"; cat \"\$
 if [ -d "$HOME/.local/bin" ]; then
   PATH="$HOME/.local/bin:$PATH"
 fi
+
+alias sudoedit='EDITOR=nvim sudoedit'
