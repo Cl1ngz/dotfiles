@@ -10,6 +10,7 @@ $nodejs\
 $rust\
 $golang\
 $php\
+$python\
 [](fg:{{colors.tertiary_container.default.hex}})\
 $fill\
 $time\
@@ -25,7 +26,7 @@ error_symbol = "[❯](bold {{colors.error.default.hex}})"
 [directory]
 style = "fg:{{colors.on_primary.default.hex}} bg:{{colors.primary.default.hex}}"
 format = "[ $path ]($style)"
-truncation_length = 3
+truncation_length = 3 # number of path seg before trunc
 truncation_symbol = "…/"
 
 [directory.substitutions]
@@ -62,6 +63,12 @@ format = '[ $symbol ($version) ]($style)'
 symbol = ""
 style = "fg:{{colors.on_tertiary_container.default.hex}} bg:{{colors.tertiary_container.default.hex}}"
 format = '[ $symbol ($version) ]($style)'
+
+[python]
+symbol = ""
+style = "fg:{{colors.on_tertiary_container.default.hex}} bg:{{colors.tertiary_container.default.hex}}"
+# venv name and version only the venv name ($virtualenv)
+format = '[ $symbol ($virtualenv) ]($style)'
 
 [time]
 disabled = true

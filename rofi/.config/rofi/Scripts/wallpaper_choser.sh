@@ -41,7 +41,7 @@ choose_wallpaper() {
     choose_wallpaper
   elif [ -n "$selected" ]; then
     # Image was selected
-    swall.sh "$current_path/$selected"
+    ~/.local/bin/swall.sh "$current_path/$selected"
   fi
 }
 
