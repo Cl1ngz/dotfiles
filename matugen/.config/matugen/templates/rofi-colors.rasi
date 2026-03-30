@@ -1,3 +1,5 @@
+// Matugen Theme
+
 * {
 <* for name, value in colors *>
     {{ name | replace: "_", "-" }}: {{ value.default.hex }};

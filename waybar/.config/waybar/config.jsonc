@@ -158,11 +158,11 @@
     "format": "{:%H:%M}"
   },
 
-  "custom/toggle_bottom_bar": {
-    "format": "", // Change to any icon you prefer
-    "tooltip": "Toggle Dock",
-    "on-click": "~/.config/waybar/toggle-bottom-bar.sh"
-  },
+  // "custom/toggle_bottom_bar": {
+  //   "format": "", // Change to any icon you prefer
+  //   "tooltip": "Toggle Dock",
+  //   "on-click": "~/.config/waybar/toggle-bottom-bar.sh"
+  // },
 
 "custom/music": {
     "format": "{}",

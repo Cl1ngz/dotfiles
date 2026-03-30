@@ -12,7 +12,7 @@ reboot="󰜉"
 
 options="$lock\n$logout\n$suspend\n$shutdown\n$reboot"
 
-# We use higher padding (45px) and specific spacing to create the boxy look
+# higher padding (45px) and specific spacing for the boxy look
 chosen="$(echo -e "$options" | rofi -dmenu -i -p "Uptime: $uptime" \
   -theme-str 'window {width: 700px;} 
               listview {columns: 5; lines: 1; orientation: horizontal; spacing: 15px; margin: 10px;} 
