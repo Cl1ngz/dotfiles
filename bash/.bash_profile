@@ -22,7 +22,7 @@ export FILE_MANAGER="thunar"
 export VIDEO_PLAYER="vlc"
 
 # Set the default image viewer
-export IMAGE_VIEWER="nsxiv"
+export IMAGE_VIEWER="imv"
 
 # Set the default document viewer
 #export DOCUMENT_VIEWER=""
