@@ -170,13 +170,13 @@ rules = [
     # Documents
     { mime = "application/{pdf,doc,rtf}", fg = "#a6e3a1" },
 
-    # Special files
-    { name = "*", is = "orphan", bg = "{{colors.error_container.default.hex}}" },
-    { name = "*", is = "exec", fg = "{{colors.on_error_container.default.hex}}" },
+    # Special files (FIXED HERE)
+    { mime = "*", is = "orphan", bg = "{{colors.error_container.default.hex}}" },
+    { mime = "*", is = "exec", fg = "{{colors.on_error_container.default.hex}}" },
 
     # Fallback
-    { url = "*", fg = "{{colors.on_surface.default.hex}}" },
-    { url = "*/", fg = "{{colors.surface_tint.default.hex}}" },
+    { mime = "*", fg = "{{colors.on_surface.default.hex}}" },
+    { mime = "inode/directory", fg = "{{colors.surface_tint.default.hex}}" },
 ]
 
 # : ]]]
