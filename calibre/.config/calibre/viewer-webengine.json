@@ -169,6 +169,33 @@
     },
     "standalone_recently_opened": [
       {
+        "authors": [
+          "Michael Dylan Foster"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Michael Dylan Foster/The Book of Yokai, Expanded (857)/The Book of Yokai, Expanded - Michael Dylan Foster.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Michael Dylan Foster/The Book of Yokai, Expanded (857)/The Book of Yokai, Expanded - Michael Dylan Foster.epub",
+        "timestamp": "2026-05-05T18:53:51.519Z",
+        "title": "The Book of Yokai, Expanded"
+      },
+      {
+        "authors": [
+          "Madeline Miller"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Madeline Miller/Kirke (856)/Kirke - Madeline Miller.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Madeline Miller/Kirke (856)/Kirke - Madeline Miller.epub",
+        "timestamp": "2026-05-05T18:52:42.941Z",
+        "title": "Kirke"
+      },
+      {
+        "authors": [
+          "Lafcadio Hearn"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Lafcadio Hearn/Kwaidan. Opowiesci niezwykle (855)/Kwaidan. Opowiesci niezwykle - Lafcadio Hearn.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Lafcadio Hearn/Kwaidan. Opowiesci niezwykle (855)/Kwaidan. Opowiesci niezwykle - Lafcadio Hearn.epub",
+        "timestamp": "2026-05-05T18:52:08.309Z",
+        "title": "Kwaidan. Opowieści niezwykłe"
+      },
+      {
         "key": "/home/cl1ngz/Documents/Notes/Main_Valut/TODO.md",
         "pathtoebook": "/home/cl1ngz/Documents/Notes/Main_Valut/TODO.md",
         "timestamp": "2026-03-26T00:39:22.710Z",
@@ -356,30 +383,6 @@
         "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Fonda Lee/Miasto Jadeitu (229)/Miasto Jadeitu - Fonda Lee.epub",
         "timestamp": "2025-11-28T22:40:59.458Z",
         "title": "Miasto Jadeitu"
-      },
-      {
-        "authors": [
-          "Fonda Lee"
-        ],
-        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Fonda Lee/Dziedzictwo Jadeitu (228)/Dziedzictwo Jadeitu - Fonda Lee.epub",
-        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Fonda Lee/Dziedzictwo Jadeitu (228)/Dziedzictwo Jadeitu - Fonda Lee.epub",
-        "timestamp": "2025-11-28T22:40:50.235Z",
-        "title": "Dziedzictwo Jadeitu"
-      },
-      {
-        "key": "/home/cl1ngz/Documents/Other/ARCHItektura2.odt",
-        "pathtoebook": "/home/cl1ngz/Documents/Other/ARCHItektura2.odt",
-        "timestamp": "2025-11-03T09:04:34.808Z",
-        "title": "ARCHItektura2"
-      },
-      {
-        "authors": [
-          "Ian Cameron Esslemont"
-        ],
-        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Ian Cameron Esslemont/Powrot Karmazynowej Gwardii tom 1 (227)/Powrot Karmazynowej Gwardii tom 1 - Ian Cameron Esslemont.epub",
-        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Ian Cameron Esslemont/Powrot Karmazynowej Gwardii tom 1 (227)/Powrot Karmazynowej Gwardii tom 1 - Ian Cameron Esslemont.epub",
-        "timestamp": "2025-10-22T18:37:23.857Z",
-        "title": "Powrót Karmazynowej Gwardii tom 1"
       }
     ]
   }

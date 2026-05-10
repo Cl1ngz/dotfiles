@@ -1036,7 +1036,7 @@
       },
       "virtual_geometry": {
         "height": 1080,
-        "width": 3840,
+        "width": 1920,
         "x": 0,
         "y": 0
       }
@@ -1409,7 +1409,7 @@
     "__value__": "AAAA/wAAAAEAAAACAAABwgAAAcIA/////wEAAAABAA=="
   },
   "library_usage_stats": {
-    "/home/cl1ngz/Documents/Calibre_Libarary": 140
+    "/home/cl1ngz/Documents/Calibre_Libarary": 146
   },
   "light_palette_name": "",
   "light_palettes": {
