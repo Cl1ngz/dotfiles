@@ -1,6 +1,7 @@
 return {
   "github/copilot.vim",
   config = function()
+    vim.g.copilot_node_command = "/usr/bin/node-lts-jod"
     -- Enable Copilot for all filetypes
     vim.g.copilot_filetypes = { ["*"] = true } -- Enable Copilot for all filetypes
 

@@ -1,4 +1,4 @@
-local hl = require("hyprland")
+-- local hl = require("hyprland")
 
 ---------------------
 --   Input Setup   --

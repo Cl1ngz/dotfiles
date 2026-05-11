@@ -17,6 +17,7 @@
 **/gtk-dark.css
 # Ignore Kitty's active theme state
 **/colors.conf
+**/colors.lua
 **/current-theme.conf
 # Ignore active wallpaper symlink
 **/current_wall

@@ -1,7 +1,7 @@
 -- █░█░█ █ █▄░█ █▀▄ █▀█ █░█░█   █▀█ █░█ █░░ █▀▀ █▀
 -- ▀▄▀▄▀ █ █░▀█ █▄▀ █▄█ ▀▄▀▄▀   █▀▄ █▄█ █▄▄ ██▄ ▄█
 
-local hl = require("hyprland")
+-- local hl = require("hyprland")
 
 ---------------------
 --  Opacity Rules  --

@@ -1,7 +1,9 @@
-local hl = require("hyprland")
+-- local hl = require("hyprland")
 
 -- Enable animations globally
-hl.config.animations = { enabled = true }
+hl.config({
+	animations = { enabled = true },
+})
 
 ---------------------
 --  Bezier Curves  --

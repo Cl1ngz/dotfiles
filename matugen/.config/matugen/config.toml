@@ -14,8 +14,8 @@ output_path = '~/.config/kitty/themes/colors.conf'
 post_hook = "kitty +kitten themes --reload-in=all colors"
 
 [templates.hyprland]
-input_path = '~/.config/matugen/templates/hyprland-colors.conf'
-output_path = '~/.config/hypr/conf/colors.conf'
+input_path = '~/.config/matugen/templates/hyprland-colors.lua'
+output_path = '~/.config/hypr/lua/colors.lua'
 
 [templates.dunst]
 input_path = '~/.config/matugen/templates/dunstrc-colors'
