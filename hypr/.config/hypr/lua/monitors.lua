@@ -1,5 +1,4 @@
 -- Set this to true if you want to cap everything at 60Hz to save battery
--- require("hyprland")
 local battery_save = false
 
 ---------------------

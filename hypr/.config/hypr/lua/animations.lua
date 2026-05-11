@@ -1,5 +1,3 @@
--- local hl = require("hyprland")
-
 -- Enable animations globally
 hl.config({
 	animations = { enabled = true },

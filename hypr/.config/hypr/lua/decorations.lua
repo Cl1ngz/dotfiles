@@ -1,5 +1,3 @@
--- local hl = require("hyprland")
-
 hl.config({
 	decoration = {
 		rounding = 25,

@@ -1,5 +1,3 @@
--- local hl = require("hyprland")
-
 ---------------------
 --   Input Setup   --
 ---------------------

@@ -1,6 +1,4 @@
--- local hl = require("hyprland")
-local colors = require("lua.colors") -- Import Matugen colors
-
+local colors = require("lua.colors")
 ---------------------
 --  Module Imports --
 ---------------------
@@ -50,8 +48,3 @@ hl.layer_rule({
 	match = { class = "^(selection)" },
 	no_anim = true,
 })
-
--- Note: 'colors.conf' should be ported to a 'lua/colors.lua'
--- where you define variables like:
--- local primary = "rgba(33ccffee)"
--- and then export them to the other files.
