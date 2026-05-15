@@ -46,9 +46,15 @@
     "Audio M3U",
     "Fetch Audio Meta"
   ],
+  "advanced search dialog current tab": 1,
+  "advanced_search_simple_tab_focused_field": "title_box",
   "basic_metadata_widget_splitter_state": {
     "__class__": "bytearray",
     "__value__": "AAAA/wAAAAEAAAADAAAA+gAAAXYAAAEKAf////8BAAAAAQA="
+  },
+  "book_info_dialog_splitter_state": {
+    "__class__": "bytearray",
+    "__value__": "AAAA/wAAAAEAAAACAAABXgAAAV4B/////wEAAAABAA=="
   },
   "book_list_pin_splitter_state": {
     "__class__": "bytearray",
@@ -56,7 +62,7 @@
   },
   "bookshelf view visible": false,
   "bulk-mde-casing-algorithm": "title_case",
-  "bulk_metadata_window_tab": 1,
+  "bulk_metadata_window_tab": 0,
   "choose-merge-dialog-splitter-state": {
     "__class__": "bytearray",
     "__value__": "AAAA/wAAAAEAAAACAAABrQAAAQAA/////wEAAAABAA=="
@@ -250,6 +256,108 @@
     "qt": {
       "__class__": "bytearray",
       "__value__": "AdnQywADAAAAAAAAAAAAAAAABK4AAAL6AAAAAAAAAAAAAASuAAAC+gAAAAACAAAAB4AAAAAAAAAAAAAABK4AAAL6"
+    },
+    "screen": {
+      "depth": 32,
+      "device_pixel_ratio": 1.0,
+      "geometry_in_logical_pixels": {
+        "height": 1080,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      },
+      "index_in_screens_list": 0,
+      "manufacturer": "Najing CEC Panda FPD Technology CO. ltd",
+      "model": "0x004D",
+      "name": "eDP-1",
+      "serial": "",
+      "size_in_logical_pixels": {
+        "height": 1080,
+        "width": 1920
+      },
+      "virtual_geometry": {
+        "height": 1080,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      }
+    }
+  },
+  "geometry-of-book_details_image_view": {
+    "frame_geometry": {
+      "height": 1080,
+      "width": 1920,
+      "x": 510,
+      "y": 438
+    },
+    "full_screened": true,
+    "geometry": {
+      "height": 1080,
+      "width": 1920,
+      "x": 510,
+      "y": 438
+    },
+    "maximized": true,
+    "normal_geometry": {
+      "height": 1039,
+      "width": 952,
+      "x": 510,
+      "y": 438
+    },
+    "qt": {
+      "__class__": "bytearray",
+      "__value__": "AdnQywADAAAAAAH+AAABtgAACX0AAAXtAAAB/gAAAbYAAAW1AAAFxAAAAAACBAAAB4AAAAH+AAABtgAACX0AAAXt"
+    },
+    "screen": {
+      "depth": 32,
+      "device_pixel_ratio": 1.0,
+      "geometry_in_logical_pixels": {
+        "height": 1080,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      },
+      "index_in_screens_list": 0,
+      "manufacturer": "Najing CEC Panda FPD Technology CO. ltd",
+      "model": "0x004D",
+      "name": "eDP-1",
+      "serial": "",
+      "size_in_logical_pixels": {
+        "height": 1080,
+        "width": 1920
+      },
+      "virtual_geometry": {
+        "height": 1080,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      }
+    }
+  },
+  "geometry-of-book_info_dialog_geometry": {
+    "frame_geometry": {
+      "height": 980,
+      "width": 910,
+      "x": 491,
+      "y": 0
+    },
+    "full_screened": false,
+    "geometry": {
+      "height": 980,
+      "width": 910,
+      "x": 491,
+      "y": 0
+    },
+    "maximized": true,
+    "normal_geometry": {
+      "height": 980,
+      "width": 910,
+      "x": 491,
+      "y": 0
+    },
+    "qt": {
+      "__class__": "bytearray",
+      "__value__": "AdnQywADAAAAAAHrAAAAAAAABXgAAAPTAAAB6wAAAAAAAAV4AAAD0wAAAAACAAAAB4AAAAHrAAAAAAAABXgAAAPT"
     },
     "screen": {
       "depth": 32,
@@ -485,26 +593,26 @@
     "frame_geometry": {
       "height": 661,
       "width": 727,
-      "x": 338,
-      "y": 91
+      "x": 0,
+      "y": 0
     },
     "full_screened": false,
     "geometry": {
       "height": 661,
       "width": 727,
-      "x": 338,
-      "y": 91
+      "x": 0,
+      "y": 0
     },
     "maximized": true,
     "normal_geometry": {
-      "height": 568,
-      "width": 577,
-      "x": 338,
-      "y": 91
+      "height": 661,
+      "width": 727,
+      "x": 0,
+      "y": 0
     },
     "qt": {
       "__class__": "bytearray",
-      "__value__": "AdnQywADAAAAAAFSAAAAWwAABCgAAALvAAABUgAAAFsAAAOSAAACkgAAAAACAAAAB4AAAAFSAAAAWwAABCgAAALv"
+      "__value__": "AdnQywADAAAAAAAAAAAAAAAAAtYAAAKUAAAAAAAAAAAAAALWAAAClAAAAAACAAAAB4AAAAAAAAAAAAAAAtYAAAKU"
     },
     "screen": {
       "depth": 32,
@@ -526,7 +634,7 @@
       },
       "virtual_geometry": {
         "height": 1080,
-        "width": 3840,
+        "width": 1920,
         "x": 0,
         "y": 0
       }
@@ -991,6 +1099,57 @@
       }
     }
   },
+  "geometry-of-manage-data-files-xx-geometry": {
+    "frame_geometry": {
+      "height": 500,
+      "width": 400,
+      "x": 397,
+      "y": 125
+    },
+    "full_screened": false,
+    "geometry": {
+      "height": 500,
+      "width": 400,
+      "x": 397,
+      "y": 125
+    },
+    "maximized": true,
+    "normal_geometry": {
+      "height": 500,
+      "width": 400,
+      "x": 397,
+      "y": 125
+    },
+    "qt": {
+      "__class__": "bytearray",
+      "__value__": "AdnQywADAAAAAAGNAAAAfQAAAxwAAAJwAAABjQAAAH0AAAMcAAACcAAAAAACAAAAB4AAAAGNAAAAfQAAAxwAAAJw"
+    },
+    "screen": {
+      "depth": 32,
+      "device_pixel_ratio": 1.0,
+      "geometry_in_logical_pixels": {
+        "height": 1080,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      },
+      "index_in_screens_list": 0,
+      "manufacturer": "Najing CEC Panda FPD Technology CO. ltd",
+      "model": "0x004D",
+      "name": "eDP-1",
+      "serial": "",
+      "size_in_logical_pixels": {
+        "height": 1080,
+        "width": 1920
+      },
+      "virtual_geometry": {
+        "height": 1080,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      }
+    }
+  },
   "geometry-of-metadata_single_gui_geom": {
     "frame_geometry": {
       "height": 636,
@@ -1189,7 +1348,7 @@
       },
       "virtual_geometry": {
         "height": 1080,
-        "width": 3840,
+        "width": 1920,
         "x": 0,
         "y": 0
       }
@@ -1399,7 +1558,59 @@
       }
     }
   },
+  "geometry-of-viewer_image_popup_geometry": {
+    "frame_geometry": {
+      "height": 1039,
+      "width": 1912,
+      "x": 510,
+      "y": 438
+    },
+    "full_screened": false,
+    "geometry": {
+      "height": 1039,
+      "width": 1912,
+      "x": 510,
+      "y": 438
+    },
+    "maximized": true,
+    "normal_geometry": {
+      "height": 1039,
+      "width": 1912,
+      "x": 510,
+      "y": 438
+    },
+    "qt": {
+      "__class__": "bytearray",
+      "__value__": "AdnQywADAAAAAAH+AAABtgAACXUAAAXEAAAB/gAAAbYAAAl1AAAFxAAAAAACAAAAB4AAAAH+AAABtgAACXUAAAXE"
+    },
+    "screen": {
+      "depth": 32,
+      "device_pixel_ratio": 1.0,
+      "geometry_in_logical_pixels": {
+        "height": 1080,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      },
+      "index_in_screens_list": 0,
+      "manufacturer": "Najing CEC Panda FPD Technology CO. ltd",
+      "model": "0x004D",
+      "name": "eDP-1",
+      "serial": "",
+      "size_in_logical_pixels": {
+        "height": 1080,
+        "width": 1920
+      },
+      "virtual_geometry": {
+        "height": 1080,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      }
+    }
+  },
   "grid view visible": false,
+  "image_popup_zoom_factor": 3.0517578125,
   "jobs view column layout3": {
     "__class__": "bytearray",
     "__value__": "AAAA/wAAAAAAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfQAAAAFAQEBAAAAAAAAAAAAAAAAAGT/////AAAAhAAAAAAAAAAFAAAAZAAAAAEAAAAAAAAAZAAAAAEAAAAAAAAAZAAAAAEAAAAAAAAAZAAAAAEAAAAAAAAAZAAAAAEAAAAAAAAD6AAAAAAAAAAAAAAAAAAAAAAAAAAAAQ=="
@@ -1409,7 +1620,7 @@
     "__value__": "AAAA/wAAAAEAAAACAAABwgAAAcIA/////wEAAAABAA=="
   },
   "library_usage_stats": {
-    "/home/cl1ngz/Documents/Calibre_Libarary": 150
+    "/home/cl1ngz/Documents/Calibre_Libarary": 164
   },
   "light_palette_name": "",
   "light_palettes": {
@@ -1454,10 +1665,10 @@
       "tag_browser": true
     },
     "wide_desires": {
-      "book_details_width": 0.14905857740585773,
+      "book_details_width": 0.14225941422594143,
       "cover_browser_height": 0.2850924918389554,
       "quick_view_height": 0.23779854620976115,
-      "tag_browser_width": 0.11767782426778242
+      "tag_browser_width": 0.10930962343096234
     },
     "wide_visibility": {
       "book_details": true,
@@ -1472,8 +1683,10 @@
     "__value__": "AAAA/wAAAAEAAAACAAACAAAAAQAA/////wEAAAABAA=="
   },
   "previous_sort_order_BooksView": {
-    "rating": true,
-    "series": true,
+    "#rating": true,
+    "#read_date": false,
+    "rating": false,
+    "series": false,
     "timestamp": false,
     "title": false
   },
@@ -1485,8 +1698,8 @@
   ],
   "qv_open_at_shutdown": false,
   "recently_used_languages": [
-    "Polish",
-    "English"
+    "English",
+    "Polish"
   ],
   "replace_scene_breaks_history": [
     "",
