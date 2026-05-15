@@ -5,7 +5,7 @@ if not vim.uv.fs_stat(lazypath) then
     "clone",
     "--filter=blob:none",
     "https://github.com/folke/lazy.nvim.git",
-    "--branch=stable", -- latest stable release
+    "--branch=stable",
     lazypath,
   })
 end
@@ -17,11 +17,6 @@ require("lazy").setup({
   { import = "cl1ngz.plugins.languagespecific" },
   { import = "cl1ngz.plugins.copilot" },
 }, {
-  checker = {
-    enabled = true,
-    notify = false,
-  },
-  change_detection = {
-    notify = false,
-  },
+  checker = { enabled = true, notify = false },
+  change_detection = { notify = false },
 })
