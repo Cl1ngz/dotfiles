@@ -1,4 +1,6 @@
-# FOR THE GOODNES SAKE WAYBAR CLICK DOENT WORK
-Because fricking stability of hypland need to change copleatyl everything that now dispachers doent work and i need tto wait for next rrealase of waybar with fix that they  areeady implement but ..dfgo
+# My Dotfiles
 # ...
-# ...
+# TODO
+- [] fix waybar when they update
+- [] document this repo
+
