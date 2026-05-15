@@ -18,7 +18,6 @@ return {
         default_settings = {
           ["rust-analyzer"] = {
             cargo = { allFeatures = true },
-            -- FIX: checkOnSave must be boolean, 'check' handles the command
             checkOnSave = true,
             check = {
               command = "clippy",

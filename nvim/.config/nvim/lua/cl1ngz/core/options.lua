@@ -34,3 +34,11 @@ opt.timeoutlen = 300
 
 -- Better netrw (though you use nvim-tree)
 vim.g.netrw_liststyle = 3
+
+-- Load native undotree safely after lazy.nvim has finished its setup
+vim.api.nvim_create_autocmd("User", {
+  pattern = "VeryLazy",
+  callback = function()
+    vim.cmd("packadd nvim.undotree")
+  end,
+})
