@@ -13,9 +13,7 @@ return {
     local mason_lspconfig = require("mason-lspconfig")
     local cmp_nvim_lsp = require("cmp_nvim_lsp")
 
-    -- MODERN NEODIM DIAGNOSTIC CONFIG
     vim.diagnostic.config({
-      -- NEW WAY: Define signs directly in the text table
       signs = {
         text = {
           [vim.diagnostic.severity.ERROR] = " ",
@@ -41,27 +39,19 @@ return {
       },
     })
 
-    -- KEYMAPS
     vim.api.nvim_create_autocmd("LspAttach", {
       group = vim.api.nvim_create_augroup("UserLspConfig", {}),
       callback = function(ev)
         local opts = { buffer = ev.buf, silent = true }
         local keymap = vim.keymap
 
-        opts.desc = "Show LSP references"
-        keymap.set("n", "gR", "<cmd>Telescope lsp_references<CR>", opts)
         opts.desc = "Go to declaration"
         keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
         opts.desc = "Show LSP definitions"
         keymap.set("n", "gd", "<cmd>Telescope lsp_definitions<CR>", opts)
-        opts.desc = "See code actions"
-        keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts)
-        opts.desc = "Smart rename"
-        keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
         opts.desc = "Show documentation"
         keymap.set("n", "K", vim.lsp.buf.hover, opts)
 
-        -- Diagnostic keymaps
         opts.desc = "Go to previous diagnostic"
         keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
         opts.desc = "Go to next diagnostic"
@@ -85,7 +75,7 @@ return {
         function(server_name)
           lspconfig[server_name].setup({ capabilities = capabilities })
         end,
-        ["rust_analyzer"] = function() end, -- Handled by rustaceanvim
+        ["rust_analyzer"] = function() end,
         ["ts_ls"] = function()
           lspconfig["ts_ls"].setup({ capabilities = capabilities })
         end,

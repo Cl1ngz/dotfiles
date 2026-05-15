@@ -7,12 +7,8 @@ return {
       server = {
         on_attach = function(client, bufnr)
           local opts = { buffer = bufnr, silent = true }
-          vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
           vim.keymap.set("n", "K", function()
             vim.cmd.RustLsp("hover")
-          end, opts)
-          vim.keymap.set("n", "<leader>ca", function()
-            vim.cmd.RustLsp("codeAction")
           end, opts)
         end,
         default_settings = {
