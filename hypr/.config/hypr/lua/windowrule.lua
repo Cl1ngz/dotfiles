@@ -48,7 +48,7 @@ end
 local workspaces = {
 	[2] = { "zen" },
 	[3] = { "thunar" },
-	[4] = { "code-oss", "jetbrains-idea" },
+	[4] = { "dev.zed.Zed", "jetbrains-idea" },
 	[5] = { "vesktop", "calibre-gui" },
 	[6] = { "obsidian", "localsend" },
 	[7] = { "virt-manager" },

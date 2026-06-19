@@ -24,6 +24,9 @@ hl.on("hyprland.start", function()
 
 		-- Battery Alerts (Batsignal)
 		'batsignal -b -w 20 -c 10 -d 5 -e "paplay /usr/share/sounds/freedesktop/stereo/message.oga"',
+
+		-- Custom Startup Apps
+		"zen-browser",
 	}
 
 	for _, app in ipairs(apps) do
@@ -31,5 +34,5 @@ hl.on("hyprland.start", function()
 	end
 end)
 
--- example of old exec
+-- example of old exec this is the replacment
 -- hl.exec_cmd("notify-send 'Hyprland' 'Config Reloaded Successfully'")

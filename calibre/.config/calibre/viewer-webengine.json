@@ -152,10 +152,10 @@
       }
     }
   },
-  "llm_lookup_tab_index": 1,
+  "llm_lookup_tab_index": 0,
   "main_window_state": {
     "__class__": "bytearray",
-    "__value__": "AAAA/wAAAAH9AAAAAgAAAAAAAAEAAAAED/wCAAAAAvsAAAAQAHQAbwBjAC0AZABvAGMAawEAAAAAAAAEDwAAAIoA////+wAAABYAcwBlAGEAcgBjAGgALQBkAG8AYwBrAAAAAAD/////AAAAmgD///8AAAABAAACWAAABBD8AgAAAAT7AAAAFgBsAG8AbwBrAHUAcAAtAGQAbwBjAGsAAAAAAAAABBAAAAChAP////sAAAAcAGIAbwBvAGsAbQBhAHIAawBzAC0AZABvAGMAawAAAAAA/////wAAAPIA////+wAAABwAaQBuAHMAcABlAGMAdABvAHIALQBkAG8AYwBrAAAAAAAAAAQQAAAAFAD////7AAAAHgBoAGkAZwBoAGwAaQBnAGgAdABzAC0AZABvAGMAawAAAAAA/////wAAANcA////AAACsgAABA8AAAAEAAAABAAAAAgAAAAI/AAAAAEAAAAAAAAAAQAAAB4AYQBjAHQAaQBvAG4AcwBfAHQAbwBvAGwAYgBhAHICAAAAAP////8AAAAAAAAAAA=="
+    "__value__": "AAAA/wAAAAH9AAAAAgAAAAAAAAEAAAAED/wCAAAAAvsAAAAQAHQAbwBjAC0AZABvAGMAawEAAAAAAAAEDwAAAIoA////+wAAABYAcwBlAGEAcgBjAGgALQBkAG8AYwBrAAAAAAD/////AAAAmgD///8AAAABAAACWAAABA/8AgAAAAT7AAAAFgBsAG8AbwBrAHUAcAAtAGQAbwBjAGsAAAAAAAAABA8AAACeAP////sAAAAcAGIAbwBvAGsAbQBhAHIAawBzAC0AZABvAGMAawAAAAAA/////wAAAPIA////+wAAABwAaQBuAHMAcABlAGMAdABvAHIALQBkAG8AYwBrAAAAAAAAAAQQAAAAFAD////7AAAAHgBoAGkAZwBoAGwAaQBnAGgAdABzAC0AZABvAGMAawAAAAAAAAAEDwAAANcA////AAACsgAABA8AAAAEAAAABAAAAAgAAAAI/AAAAAEAAAAAAAAAAQAAAB4AYQBjAHQAaQBvAG4AcwBfAHQAbwBvAGwAYgBhAHICAAAAAP////8AAAAAAAAAAA=="
   },
   "old_prefs_migrated": true,
   "session_data": {
@@ -168,6 +168,51 @@
       "singleinstance": false
     },
     "standalone_recently_opened": [
+      {
+        "key": "/home/cl1ngz/Downloads/Systemy Operacyjne.pdf",
+        "pathtoebook": "/home/cl1ngz/Downloads/Systemy Operacyjne.pdf",
+        "timestamp": "2026-06-17T18:29:47.982Z",
+        "title": "Systemy Operacyjne"
+      },
+      {
+        "key": "/home/cl1ngz/Documents/Programing/Java/School/BookVault/,mojnotatki.pdf",
+        "pathtoebook": "/home/cl1ngz/Documents/Programing/Java/School/BookVault/,mojnotatki.pdf",
+        "timestamp": "2026-06-16T11:39:35.033Z",
+        "title": ",mojnotatki"
+      },
+      {
+        "authors": [
+          "M. L. Wang"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/M. L. Wang/Destiny's Edge (926)/Destiny's Edge - M. L. Wang.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/M. L. Wang/Destiny's Edge (926)/Destiny's Edge - M. L. Wang.epub",
+        "timestamp": "2026-06-10T19:27:08.116Z",
+        "title": "Destiny's Edge"
+      },
+      {
+        "authors": [
+          "Andrzej Sapkowski"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Andrzej Sapkowski/5. Chrzest Ognia (494)/5. Chrzest Ognia - Andrzej Sapkowski.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Andrzej Sapkowski/5. Chrzest Ognia (494)/5. Chrzest Ognia - Andrzej Sapkowski.epub",
+        "timestamp": "2026-06-05T08:39:35.542Z",
+        "title": "5. Chrzest Ognia"
+      },
+      {
+        "authors": [
+          "Moorcock Michael"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Moorcock Michael/Znikajaca Wieza (376)/Znikajaca Wieza - Moorcock Michael.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Moorcock Michael/Znikajaca Wieza (376)/Znikajaca Wieza - Moorcock Michael.epub",
+        "timestamp": "2026-06-04T13:51:53.675Z",
+        "title": "Saga o Elryku 05 - Znikająca Wieża"
+      },
+      {
+        "key": "/home/cl1ngz/Documents/Programing/Java/School/Obrone.pdf",
+        "pathtoebook": "/home/cl1ngz/Documents/Programing/Java/School/Obrone.pdf",
+        "timestamp": "2026-05-29T01:19:54.937Z",
+        "title": "Obrone"
+      },
       {
         "authors": [
           "R.A. Salvatore"
@@ -338,60 +383,6 @@
         "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/R.A. Salvatore/Droga Do Switu (867)/Droga Do Switu - R.A. Salvatore.epub",
         "timestamp": "2026-05-12T15:15:55.743Z",
         "title": "10.Droga Do Świtu"
-      },
-      {
-        "authors": [
-          "R.A. Salvatore"
-        ],
-        "key": "/home/cl1ngz/Documents/Calibre_Libarary/R.A. Salvatore/Mroczne Oblezenie (866)/Mroczne Oblezenie - R.A. Salvatore.epub",
-        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/R.A. Salvatore/Mroczne Oblezenie (866)/Mroczne Oblezenie - R.A. Salvatore.epub",
-        "timestamp": "2026-05-12T14:54:16.157Z",
-        "title": "09.Mroczne Oblężenie"
-      },
-      {
-        "authors": [
-          "R.A. Salvatore"
-        ],
-        "key": "/home/cl1ngz/Documents/Calibre_Libarary/R.A. Salvatore/Bezgwiezdna Noc (865)/Bezgwiezdna Noc - R.A. Salvatore.epub",
-        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/R.A. Salvatore/Bezgwiezdna Noc (865)/Bezgwiezdna Noc - R.A. Salvatore.epub",
-        "timestamp": "2026-05-12T14:54:07.929Z",
-        "title": "08.Bezgwiezdna Noc"
-      },
-      {
-        "authors": [
-          "R.A. Salvatore"
-        ],
-        "key": "/home/cl1ngz/Documents/Calibre_Libarary/R.A. Salvatore/Dziedzictwo (864)/Dziedzictwo - R.A. Salvatore.epub",
-        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/R.A. Salvatore/Dziedzictwo (864)/Dziedzictwo - R.A. Salvatore.epub",
-        "timestamp": "2026-05-12T14:54:02.432Z",
-        "title": "07.Dziedzictwo"
-      },
-      {
-        "authors": [
-          "R. A. Salvatore"
-        ],
-        "key": "/home/cl1ngz/Documents/Calibre_Libarary/R. A. Salvatore/Klejnot Halflinga (863)/Klejnot Halflinga - R. A. Salvatore.epub",
-        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/R. A. Salvatore/Klejnot Halflinga (863)/Klejnot Halflinga - R. A. Salvatore.epub",
-        "timestamp": "2026-05-12T14:53:55.879Z",
-        "title": "06.Klejnot Halflinga"
-      },
-      {
-        "authors": [
-          "R. A. Salvatore"
-        ],
-        "key": "/home/cl1ngz/Documents/Calibre_Libarary/R. A. Salvatore/Strumienie Srebra (861)/Strumienie Srebra - R. A. Salvatore.epub",
-        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/R. A. Salvatore/Strumienie Srebra (861)/Strumienie Srebra - R. A. Salvatore.epub",
-        "timestamp": "2026-05-12T14:53:49.353Z",
-        "title": "Legenda Drizzta 5. Dolina Lodowego Wichru 2. Strumienie Srebra"
-      },
-      {
-        "authors": [
-          "R. A. Salvatore"
-        ],
-        "key": "/home/cl1ngz/Documents/Calibre_Libarary/R. A. Salvatore/Krysztalowy Relikt (862)/Krysztalowy Relikt - R. A. Salvatore.epub",
-        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/R. A. Salvatore/Krysztalowy Relikt (862)/Krysztalowy Relikt - R. A. Salvatore.epub",
-        "timestamp": "2026-05-12T14:53:42.143Z",
-        "title": "Legenda Drizzta 4. Dolina Lodowego Wichru 1. Kryształowy Relikt"
       }
     ]
   }

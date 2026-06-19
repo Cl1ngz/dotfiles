@@ -63,7 +63,9 @@
     "Audiobook"
   ],
   "save_to_disk_template_history": [],
-  "scheduler_search_history": [],
+  "scheduler_search_history": [
+    "pol"
+  ],
   "search_as_you_type": false,
   "send_to_device_template_history": [],
   "send_to_storage_card_by_default": false,
@@ -76,7 +78,14 @@
     "__class__": "set",
     "__value__": []
   },
-  "tweaks_search_history": [],
+  "tweaks_search_history": [
+    "count",
+    "rating",
+    "ratin",
+    "rat",
+    "aver",
+    "av"
+  ],
   "upload_news_to_device": true,
   "use_roman_numerals_for_series_number": true,
   "viewer_search_history": [],

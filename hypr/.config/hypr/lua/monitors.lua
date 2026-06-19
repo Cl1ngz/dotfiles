@@ -22,14 +22,6 @@ hl.monitor({
 	-- transform = 1 -- Uncomment if you want to rotate the screen
 })
 
--- Example: Secondary Display Port
--- hl.monitor({
---     output   = "DP-1",
---     mode     = "1920x1080@60",
---     position = "1920x0",
---     scale    = 1
--- })
-
 ---------------------
 -- Fallback Rule   --
 ---------------------
@@ -39,4 +31,16 @@ hl.monitor({
 	mode = "preferred",
 	position = "auto",
 	scale = 1,
+	-- for presentation purpose
+	-- mirror = "eDP-1",
 })
+
+--------------------------
+-- Examples and other shit
+-- Example: Secondary Display Port
+-- hl.monitor({
+--     output   = "DP-1",
+--     mode     = "1920x1080@60",
+--     position = "1920x0",
+--     scale    = 1
+-- })

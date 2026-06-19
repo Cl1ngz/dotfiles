@@ -21,6 +21,7 @@
 **/current-theme.conf
 # Ignore active wallpaper symlink
 **/current_wall
+**/hyprlock-colors.conf
 lazy-lock.json
 
 # Ignore all of Calibre's dynamic data

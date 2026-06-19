@@ -12,7 +12,11 @@
   "plugins": {
     "DeDRM": "/home/cl1ngz/.config/calibre/plugins/DeDRM.zip",
     "Ebook Translator": "/home/cl1ngz/.config/calibre/plugins/Ebook Translator.zip",
+    "Fantastic Fiction": "/home/cl1ngz/.config/calibre/plugins/Fantastic Fiction.zip",
+    "Fantastic Fiction Adults": "/home/cl1ngz/.config/calibre/plugins/Fantastic Fiction Adults.zip",
+    "FictionDB": "/home/cl1ngz/.config/calibre/plugins/FictionDB.zip",
     "Goodreads": "/home/cl1ngz/.config/calibre/plugins/Goodreads.zip",
+    "Kindle hi-res covers": "/home/cl1ngz/.config/calibre/plugins/Kindle hi-res covers.zip",
     "Kobo Metadata": "/home/cl1ngz/.config/calibre/plugins/Kobo Metadata.zip",
     "LubimyCzytac": "/home/cl1ngz/.config/calibre/plugins/LubimyCzytac.zip"
   }
