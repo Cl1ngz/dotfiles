@@ -12,6 +12,7 @@
 **/starship.toml
 # dunst notifications
 **/dunstrc
+# mako notifications
 mako/.config/mako/config
 # gtk
 **/gtk.css
