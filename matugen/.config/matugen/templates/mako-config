@@ -1,0 +1,44 @@
+# Global Settings
+max-history=20
+layer=overlay
+anchor=top-right
+font=JetBrains Mono Nerd Font 10
+format=<b>%s</b>\n%b
+markup=1
+actions=true
+icons=1
+max-icon-size=64
+default-timeout=10000
+ignore-timeout=0
+width=300
+height=300
+margin=20
+padding=10
+border-size=2
+border-radius=12
+
+# Colors generated dynamically by Matugen
+background-color={{colors.surface.default.hex}}e6
+text-color={{colors.on_surface.default.hex}}
+border-color={{colors.primary.default.hex}}
+
+# Low Urgency
+[urgency=low]
+background-color={{colors.surface_container_low.default.hex}}e6
+text-color={{colors.on_surface.default.hex}}
+border-color={{colors.outline.default.hex}}
+default-timeout=5000
+
+# Normal Urgency
+[urgency=normal]
+background-color={{colors.surface_container.default.hex}}e6
+text-color={{colors.on_surface.default.hex}}
+border-color={{colors.primary.default.hex}}
+default-timeout=10000
+
+# Critical Urgency
+[urgency=critical]
+background-color={{colors.surface_container_high.default.hex}}e6
+text-color={{colors.on_surface.default.hex}}
+border-color={{colors.error.default.hex}}
+default-timeout=0
