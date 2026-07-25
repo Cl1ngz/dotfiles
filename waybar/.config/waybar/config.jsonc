@@ -15,15 +15,11 @@
     "hyprland/workspaces",
     "custom/separator",
     "idle_inhibitor",
-    "custom/notification-silencing-indicator",
-    "custom/screenrecording-indicator",
-    "custom/update",
-    // "custom/updatespacman",
     "power-profiles-daemon",
     "bluetooth"
   ],
   "modules-center": [
- "mpris"
+    "mpd"
   ],
   "modules-right": [
     "battery",
@@ -36,7 +32,7 @@
     "cpu",
     "custom/separator",
     // "custom/weather",
-    "custom/clock",
+    "clock",
     "custom/separator2",
     "tray"
   ],
@@ -82,27 +78,11 @@
   },
 
     "custom/power_btn": {
-    "format": "  ",
+    "format": "",
     "on-click": "~/.config/rofi/Scripts/powermenu.sh",
     "tooltip-format": "Power Menu"
-    // "on-click-right": "xdg-terminal-exec",
   },
 
-  "custom/update": {
-    "format": "",
-    "exec": "omarchy-update-available",
-    "on-click": "omarchy-launch-floating-terminal-with-presentation omarchy-update",
-    "tooltip-format": "Omarchy update available",
-    "signal": 7,
-    "interval": 21600
-  },
-
-  "custom/notification-silencing-indicator": {
-    "on-click": "omarchy-toggle-notification-silencing",
-    "exec": "$OMARCHY_PATH/default/waybar/indicators/notification-silencing.sh",
-    "signal": 10,
-    "return-type": "json"
-  },
   "power-profiles-daemon": {
     "format": "{icon}",
     "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
@@ -113,6 +93,7 @@
       "power-saver": ""
     }
   },
+
  "cpu": {
     "interval": 5,
     "format": "",
@@ -122,6 +103,7 @@
         "critical": 80
     }
   },
+
   "backlight": {
         "device": "intel_backlight",
         "format": "{icon}",
@@ -133,6 +115,7 @@
         "on-scroll-down": "brightnessctl s 5%-",
         "on-scroll-up": "brightnessctl s +5%"
     },
+
    "memory": {
     "interval": 5,
     "format": "",
@@ -142,6 +125,12 @@
         "warning": 50,
         "critical": 80
     }
+  },
+
+  "clock": {
+    "format": "{:%H:%M %p}",
+    "tooltip": false,
+    "on-click": "~/.config/rofi/Scripts/rofi-calendar.sh"
   },
 
   "custom/clock": {
@@ -169,6 +158,7 @@
     "spacing": 1,
     "on-click": "nm-connection-editor"
   },
+
    "battery": {
     "format": "{capacity}% {icon} ",
     "format-charging": " {capacity}% {icon} ",
@@ -191,6 +181,7 @@
       "critical": 15
     }
   },
+
  "bluetooth": {
     "format": "{num_connections}",
     "format-disabled": "󰂲 {status}",
@@ -198,6 +189,7 @@
     "tooltip-format": "Devices connected: {num_connections}",
     "on-click": "blueman-manager"
   },
+
 "pulseaudio#input": {
     "format-source": "",
     "format-source-muted": "",
@@ -206,36 +198,37 @@
     "scroll-step": 1,
     "smooth-scrolling-threshold": 1,
     "max-volume": 100,
-    "on-click": "omarchy-launch-audio",
-    "on-click-right": "pamixer -t",
+    "on-click": "pamixer --default-source -t",
+    "on-click-right": "pavucontrol",
     "on-scroll-up": "pactl set-source-volume @DEFAULT_SOURCE@ +1%",
     "on-scroll-down": "pactl set-source-volume @DEFAULT_SOURCE@ -1%"
   },
+
   "pulseaudio#output": {
     "format": "{icon}",
     "tooltip-format": "{icon}  {volume}%",
-     "format-muted": "",
-      "format-icons": {
+    "format-muted": "",
+    "format-icons": {
       "default": ["", "", ""]
     },
     "max-volume": 100,
     "scroll-step": 2,
     "smooth-scrolling-threshold": 1,
-    "on-click": "omarchy-launch-audio",
-    "on-click-right": "pamixer -t"
+    "on-click": "pamixer -t",
+    "on-click-right": "pavucontrol"
   },
- "mpris": {
-    "format": "  {dynamic}",
-    "format-paused": " {status_icon} {dynamic}",
-    "interval": 1, 
-    "dynamic-order": ["artist", "position", "length"], 
-    "dynamic-importance-order": ["position", "length", "artist"],
-    "tooltip-format": "{player} ({status}):\n{artist} - {title}",  
-    "status-icons": {
-      "paused": "󰝛"
-    },
-    "ignored-players": ["firefox", "brave"]
-    },
+
+"mpd": {
+    "format": "  {artist} - {title}",
+    "format-paused": " 󰝛 {artist} - {title}",
+    "format-stopped": " 󰝛 ",
+    "on-click": "mpc toggle",
+    "on-click-middle": "mpc clear",
+    "on-click-right": "kitty -e ncmpcpp",
+    "tooltip-format": "MPD (Connected)\n{artist} - {title}",
+    "tooltip-format-disconnected": "MPD (Disconnected)"
+},
+
   "idle_inhibitor": {
    "format": "{icon}",
    "tooltip-format-activated": "Stay Awake: ON 󱎴",
@@ -245,25 +238,9 @@
       "deactivated": "󰷛"
     }
   },
- "custom/updatespacman": {
-    "format": "{}{icon}",
-    "return-type": "json",
-    "format-icons": {
-      "has-updates": "󰏖",
-      "updated": ""
-    },
-    "exec-if": "which waybar-module-pacman-updates",
-    "exec": "waybar-module-pacman-updates --no-zero-output"
-  },
+
   "tray": {
     "icon-size": 13,
     "spacing": 2
   },
-  "custom/screenrecording-indicator": {
-    "on-click": "omarchy-capture-screenrecording",
-    "exec": "$OMARCHY_PATH/default/waybar/indicators/screen-recording.sh",
-    "signal": 8,
-    "return-type": "json"
-  },
-  
 }

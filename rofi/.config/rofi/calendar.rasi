@@ -1,0 +1,76 @@
+@import "colors.rasi"
+
+window {
+    width: 320px;
+    location: north east;
+    anchor: north east;
+    x-offset: -10px;
+    y-offset: 45px;
+    border-radius: 12px;
+    padding: 12px;
+    background-color: var(surface);
+}
+
+mainbox {
+    children: [ inputbar, listview ];
+    background-color: transparent;
+}
+
+inputbar {
+    children: [ prompt ];
+    margin: 0 0 10px 0;
+    background-color: transparent;
+}
+
+prompt {
+    horizontal-align: 0.5;
+    font: "JetBrainsMono Nerd Font Bold 12";
+    text-color: var(on-surface);
+    background-color: transparent;
+}
+
+listview {
+    columns: 7;
+    lines: 7;
+    cycle: false;
+    flow: horizontal; 
+    scrollbar: false;
+    background-color: transparent;
+    spacing: 0px;
+    fixed-columns: true;
+}
+
+/* WIPE ALL DEFAULT BACKGROUNDS AND HIGHLIGHTS */
+element, 
+element normal.normal, 
+element alternate.normal, 
+element selected.normal,
+element normal.active,
+element alternate.active,
+element selected.active {
+    children: [ element-text ];
+    padding: 6px 0px;
+    border-radius: 6px;
+    background-color: transparent;
+    text-color: var(on-surface);
+}
+
+element-text {
+    horizontal-align: 0.5;
+    vertical-align: 0.5;
+    font: "JetBrainsMono Nerd Font 11";
+    text-color: var(on-surface);
+    background-color: transparent;
+}
+
+/* ONLY HIGHLIGHT TODAY'S DATE */
+element normal.active, 
+element alternate.active {
+    background-color: var(primary);
+}
+
+element-text normal.active, 
+element-text alternate.active {
+    text-color: var(on-primary);
+    font: "JetBrainsMono Nerd Font Bold 11";
+}

@@ -121,13 +121,14 @@ window#waybar.empty .modules-center {
 #custom-voxtype.recording,
 #custom-weather,
 #custom-clock,
+#clock,
 #custom-updatespacman,
 #custom-idle-indicator.active,
 #custom-idle-indicator,
 #custom-notification-silencing-indicator.active,
 #custom-notification-silencing-indicator #custom-screenrecording-indicator,
 #custom-update,
-#custom-omarchy {
+#custom-power_btn {
   min-width: 14px;
   color: @fg;
   padding: 0px 8px;
@@ -179,7 +180,7 @@ window#waybar.empty .modules-center {
   padding-right: 12px;
 }
 
-#custom-omarchy {
+#custom-power_btn {
   color: @red;
   font-size: 16px;
   background: @bg;
@@ -191,7 +192,12 @@ window#waybar.empty .modules-center {
   font-weight: bold;
 }
 
-#mpris {
+#clock {
+  color: @red;
+  font-weight: bold;
+}
+
+#mpd {
   background-color: @bg;
   border: 1px solid alpha(@fg, 0.2);
   border-radius: 15px;
