@@ -9,6 +9,7 @@ require("lua.keybinds")
 require("lua.animations")
 require("lua.input_gestures")
 require("lua.decorations")
+require("lua.env")
 
 ---------------------
 -- Main Config     --

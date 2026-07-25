@@ -23,9 +23,10 @@ hl.on("hyprland.start", function()
 		"hypridle",
 
 		-- Battery Alerts (Batsignal)
-		'batsignal -b -w 20 -c 10 -d 5 -e "paplay /usr/share/sounds/freedesktop/stereo/message.oga"',
+		"batsignal -b -w 20 -c 10 -d 5",
 
 		-- Custom Startup Apps
+		"bash -c 'sleep 2 && keepassxc'",
 		"zen-browser",
 	}
 

@@ -20,7 +20,7 @@ alias ls='eza --hyperlink --icons --color=always'
 # bat is nice
 alias cat='bat --paging=never'
 alias grep='grep --color=auto'
-alias date='date "+%d-%m-%Y %H:%M:%S"'
+# alias date='date "+%d-%m-%Y %H:%M:%S"'
 
 # Nvim aliases
 alias v='nvim'

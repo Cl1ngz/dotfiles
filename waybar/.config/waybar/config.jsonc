@@ -1,179 +1,269 @@
 {
-  "layer": "top",
+  "exclusive": true,
+  "reload_style_on_change": true,
   "position": "top",
   "mod": "dock",
-  "exclusive": true,
   "passthrough": false,
   "gtk-layer-shell": true,
-  "height": 20,
+  "margin-top": 0,
+  "margin-left": 0,
+  "margin-right": 0,
+  "margin-bottom": 0,
   "modules-left": [
-    "custom/lock_screen",
-    // "custom/toggle_bottom_bar",
-    "hyprland/workspaces"
+    "custom/power_btn",
+    "custom/separator",
+    "hyprland/workspaces",
+    "custom/separator",
+    "idle_inhibitor",
+    "custom/notification-silencing-indicator",
+    "custom/screenrecording-indicator",
+    "custom/update",
+    // "custom/updatespacman",
+    "power-profiles-daemon",
+    "bluetooth"
   ],
   "modules-center": [
-    // "idle_inhibitor",
-    "clock",
-"custom/music-icon",
-    "custom/music"
+ "mpris"
   ],
   "modules-right": [
-    "cpu",
-    "pulseaudio",
-    "pulseaudio#microphone",
-    "backlight",
-    // "temperature",
     "battery",
-    "custom/power_profile",
-    "tray",
-    "custom/power_btn"
+    "custom/separator3",
+    "backlight",
+    // "network",
+    "pulseaudio#input",
+    "pulseaudio#output",
+    "memory",
+    "cpu",
+    "custom/separator",
+    // "custom/weather",
+    "custom/clock",
+    "custom/separator2",
+    "tray"
   ],
 
-  "include": [
-    "~/.config/HyprV/waybar/conf/mesu.jsonc",
-    "~/.config/HyprV/waybar/conf/asus-rog.jsonc",
-    "~/.config/HyprV/waybar/conf/hyprv-util.jsonc"
-  ],
-
-  "idle_inhibitor": {
-    "format": "{icon}",
-    "format-icons": {
-      "activated": "󰛐",
-      "deactivated": "󰛑"
-    },
-    "tooltip": true
-  },
-
-  "hyprland/language": {
-    "interval": 30,
-    "format": " {}",
-    "keyboard-name": "",
-    "on-click": "~/.config/HyprV/hyprv_util swkb",
-    "signal": 8
-  },
-
-  "custom/power_btn": {
-    "format": "",
-    "on-click": "/home/cl1ngz/.config/rofi/Scripts/powermenu.sh",
-    "tooltip": false
-  },
-
-  "custom/lock_screen": {
-    "format": "",
-    "on-click": "loginctl lock-session",
-    "tooltip": false
-  },
-
-  "wlr/workspaces": {
+  "hyprland/workspaces": {
     "disable-scroll": true,
     "all-outputs": true,
-    "on-click": "activate",
-    "persistent_workspaces": {
-      "1": [],
-      "2": [],
-      "3": [],
-      "4": [],
-      "5": [],
-      "6": [],
-      "7": [],
-      "8": [],
-      "9": [],
-      "10": []
+    "cursor": true,
+    "format": "{icon}",
+      "persistent-workspaces": {
+      "*": 6
     }
   },
 
-  "cpu": {
-    "interval": 10,
-    "format": "",
-    "max-length": 10,
-    "format-alt-click": "click-right",
-    "format-alt": " {usage}%",
-    "on-click": "kitty --start-as=fullscreen --title btop sh -c 'btop'"
-  },
+"custom/separator": {
+    "format": "|", 
+    "tooltip": false
+},
 
-  "battery": {
-    "states": {
-      "good": 80,
-      "warning": 30,
-      "critical": 20
-    },
-    "format": "{icon}",
-    "format-charging": " {capacity}%",
-    "format-plugged": " {capacity}%",
-    "format-alt-click": "click-right",
-    "format-alt": "{icon} {capacity}%",
-    "format-icons": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"]
-  },
+"custom/separator2": {
+"exec": "sh -c 'count=$(busctl --user get-property org.kde.StatusNotifierWatcher /StatusNotifierWatcher org.kde.StatusNotifierWatcher RegisteredStatusNotifierItems | sed -n \"s/^as \\([0-9]\\+\\).*/\\1/p\"); if [ \"${count:-0}\" -gt 0 ]; then echo \"{\\\"text\\\":\\\"|\\\",\\\"class\\\":\\\"show\\\"}\"; else echo \" {\\\"text\\\":\\\"\\\",\\\"class\\\":\\\"hide\\\"}\"; fi'",
+    "return-type": "json",
+    "interval": 2
+},
 
-  "pulseaudio": {
-    "format": "{icon}",
-    "format-muted": "",
-    "on-click": "~/.config/waybar/scripts/volume --toggle",
-    "on-click-right": "pavucontrol",
-    "on-scroll-up": "~/.config/waybar/scripts/volume --inc",
-    "on-scroll-down": "~/.config/waybar/scripts/volume --dec",
-    "scroll-step": 5,
-    "format-icons": {
-      "headphone": "",
-      "hands-free": "",
-      "headset": "",
-      "phone": "",
-      "portable": "",
-      "car": "",
-      "default": ["", "", ""]
-    },
+"custom/separator3": {
+    "exec": "sh -c '[ -d /sys/class/backlight ] && [ \"$(ls -A /sys/class/backlight 2>/dev/null)\" ] && ls /sys/class/power_supply 2>/dev/null | grep -q \"^BAT\" && echo \"|\"'",
+    "tooltip": false,
+    "interval": "once"
+},
+
+"custom/separator4": {
+    "format": "", 
+    "tooltip": false
+},
+
+  "custom/weather": {
+    "format": "{}°",
     "tooltip": true,
-    "tooltip-format": "{icon} at {volume}%"
+    "interval": 60,
+    "exec": "wttrbar --nerd --location Chongqing",
+    "return-type": "json"
   },
 
-  "pulseaudio#microphone": {
-    "format": "{format_source}",
+    "custom/power_btn": {
+    "format": "  ",
+    "on-click": "~/.config/rofi/Scripts/powermenu.sh",
+    "tooltip-format": "Power Menu"
+    // "on-click-right": "xdg-terminal-exec",
+  },
+
+  "custom/update": {
+    "format": "",
+    "exec": "omarchy-update-available",
+    "on-click": "omarchy-launch-floating-terminal-with-presentation omarchy-update",
+    "tooltip-format": "Omarchy update available",
+    "signal": 7,
+    "interval": 21600
+  },
+
+  "custom/notification-silencing-indicator": {
+    "on-click": "omarchy-toggle-notification-silencing",
+    "exec": "$OMARCHY_PATH/default/waybar/indicators/notification-silencing.sh",
+    "signal": 10,
+    "return-type": "json"
+  },
+  "power-profiles-daemon": {
+    "format": "{icon}",
+    "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
+    "tooltip": true,
+    "format-icons": {
+      "performance": "",
+      "balanced": "",
+      "power-saver": ""
+    }
+  },
+ "cpu": {
+    "interval": 5,
+    "format": "",
+    "on-click": "kitty --start-as=fullscreen --title btop sh -c 'btop'",
+    "states": {
+        "warning": 50,
+        "critical": 80
+    }
+  },
+  "backlight": {
+        "device": "intel_backlight",
+        "format": "{icon}",
+        "tooltip": true,
+        "tooltip-format": "Brightness:  {percent}%",
+        "format-alt": "{percent}% {icon}",
+        "format-alt-click": "click-right",
+        "format-icons": [" 󰃜", "󰃝", "󰃞", "󰃟", "󰃠"],
+        "on-scroll-down": "brightnessctl s 5%-",
+        "on-scroll-up": "brightnessctl s +5%"
+    },
+   "memory": {
+    "interval": 5,
+    "format": "",
+    "tooltip-format": "Used {percentage}%\n{used:0.1f}GB/{total:0.1f}GB",
+    "on-click": "kitty --start-as=fullscreen --title btop sh -c 'btop'",
+       "states": {
+        "warning": 50,
+        "critical": 80
+    }
+  },
+
+  "custom/clock": {
+    "exec": "date +'%H:%M %p' | tr '[:upper:]' '[:lower:]'",
+    "interval": 60,
+    "tooltip": false,
+    "on-click-right": "omarchy-launch-floating-terminal-with-presentation omarchy-tz-select"
+},
+  "network": {
+    "format-icons": [
+      "󰤯",
+      "󰤟",
+      "󰤢",
+      "󰤥",
+      "󰤨"
+    ],
+    "format": "{icon}",
+    "format-wifi": "{icon}",
+    "format-ethernet": "󰌗",
+    "format-disconnected": "󰤮",
+    "tooltip-format-wifi": "{essid} ({frequency} GHz)\n⇣{bandwidthDownBytes}  ⇡{bandwidthUpBytes}",
+    "tooltip-format-ethernet": "⇣{bandwidthDownBytes}  ⇡{bandwidthUpBytes}",
+    "tooltip-format-disconnected": "Disconnected",
+    "interval": 3,
+    "spacing": 1,
+    "on-click": "nm-connection-editor"
+  },
+   "battery": {
+    "format": "{capacity}% {icon} ",
+    "format-charging": " {capacity}% {icon} ",
+    "format-plugged": " {capacity}% ",
+    "format-icons": [
+            "",
+            "",
+            "",
+            "",
+            ""
+    ],
+    "format-full": "󱊦 {capacity}% ",
+    "tooltip-format-discharging": "{timeTo}",
+    "tooltip-format-charging": "{timeTo}",
+    "interval": 5,
+    "on-click": "omarchy-menu power",
+    "on-click-right": "notify-send -u low \"$(omarchy-battery-status)\"",
+    "states": {
+      "warning": 30,
+      "critical": 15
+    }
+  },
+ "bluetooth": {
+    "format": "{num_connections}",
+    "format-disabled": "󰂲 {status}",
+    "format-connected": "󰂱 {num_connections}",
+    "tooltip-format": "Devices connected: {num_connections}",
+    "on-click": "blueman-manager"
+  },
+"pulseaudio#input": {
     "format-source": "",
     "format-source-muted": "",
-    "on-click": "~/.config/waybar/scripts/volume --toggle-mic",
-    "on-click-right": "pavucontrol",
-    "on-scroll-up": "~/.config/waybar/scripts/volume --mic-inc",
-    "on-scroll-down": "~/.config/waybar/scripts/volume --mic-dec",
-    "scroll-step": 5,
-    "tooltip": true,
-    "tooltip-format": " at {volume}%"
+    "format": "{format_source}",
+    "tooltip-format": "{format_source} {source_volume}%",
+    "scroll-step": 1,
+    "smooth-scrolling-threshold": 1,
+    "max-volume": 100,
+    "on-click": "omarchy-launch-audio",
+    "on-click-right": "pamixer -t",
+    "on-scroll-up": "pactl set-source-volume @DEFAULT_SOURCE@ +1%",
+    "on-scroll-down": "pactl set-source-volume @DEFAULT_SOURCE@ -1%"
   },
-
-  "backlight": {
-    "device": "intel_backlight",
+  "pulseaudio#output": {
     "format": "{icon}",
-    "format-alt-click": "click-right",
-    "format-alt": "{icon} {percent}%",
-    "format-icons": ["󰃞", "󰃟", "󰃠"],
-    "on-scroll-up": "~/.config/waybar/scripts/brightness --inc",
-    "on-scroll-down": "~/.config/waybar/scripts/brightness --dec"
+    "tooltip-format": "{icon}  {volume}%",
+     "format-muted": "",
+      "format-icons": {
+      "default": ["", "", ""]
+    },
+    "max-volume": 100,
+    "scroll-step": 2,
+    "smooth-scrolling-threshold": 1,
+    "on-click": "omarchy-launch-audio",
+    "on-click-right": "pamixer -t"
   },
-
-  "tray": {
-    "icon-size": 16,
-    "spacing": 10
+ "mpris": {
+    "format": "  {dynamic}",
+    "format-paused": " {status_icon} {dynamic}",
+    "interval": 1, 
+    "dynamic-order": ["artist", "position", "length"], 
+    "dynamic-importance-order": ["position", "length", "artist"],
+    "tooltip-format": "{player} ({status}):\n{artist} - {title}",  
+    "status-icons": {
+      "paused": "󰝛"
+    },
+    "ignored-players": ["firefox", "brave"]
+    },
+  "idle_inhibitor": {
+   "format": "{icon}",
+   "tooltip-format-activated": "Stay Awake: ON 󱎴",
+   "tooltip-format-deactivated": "Stay Awake: OFF 󰶐",
+    "format-icons": {
+      "activated": "󱎴",
+      "deactivated": "󰷛"
+    }
   },
-
-  "clock": {
-    "format": "{:%H:%M}"
-  },
-
-  // "custom/toggle_bottom_bar": {
-  //   "format": "", // Change to any icon you prefer
-  //   "tooltip": "Toggle Dock",
-  //   "on-click": "~/.config/waybar/toggle-bottom-bar.sh"
-  // },
-
-"custom/music": {
-    "format": "{}",
+ "custom/updatespacman": {
+    "format": "{}{icon}",
     "return-type": "json",
-    "interval": 1,
-    "exec": "~/.config/waybar/scripts/music-info.sh",
-    "on-click": "mpc toggle",
-    "on-click-right": "kitty ncmpcpp",
-    "on-scroll-up": "mpc next",
-    "on-scroll-down": "mpc prev",
-    "max-length": 30,
-    "tooltip": true
-},
+    "format-icons": {
+      "has-updates": "󰏖",
+      "updated": ""
+    },
+    "exec-if": "which waybar-module-pacman-updates",
+    "exec": "waybar-module-pacman-updates --no-zero-output"
+  },
+  "tray": {
+    "icon-size": 13,
+    "spacing": 2
+  },
+  "custom/screenrecording-indicator": {
+    "on-click": "omarchy-capture-screenrecording",
+    "exec": "$OMARCHY_PATH/default/waybar/indicators/screen-recording.sh",
+    "signal": 8,
+    "return-type": "json"
+  },
+  
 }

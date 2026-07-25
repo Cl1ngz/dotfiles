@@ -53,14 +53,14 @@
   "geometry-of-main_window_geometry": {
     "frame_geometry": {
       "height": 1039,
-      "width": 952,
+      "width": 1912,
       "x": 0,
       "y": 0
     },
     "full_screened": false,
     "geometry": {
       "height": 1039,
-      "width": 952,
+      "width": 1912,
       "x": 0,
       "y": 0
     },
@@ -73,7 +73,7 @@
     },
     "qt": {
       "__class__": "bytearray",
-      "__value__": "AdnQywADAAAAAAAAAAAAAAAAA7cAAAQOAAAAAAAAAAAAAAO3AAAEDgAAAAACAAAAB4AAAAAAAAAAAAAAA7cAAAQO"
+      "__value__": "AdnQywADAAAAAAAAAAAAAAAAB3cAAAQOAAAAAAAAAAAAAAO3AAAEDgAAAAACAAAAB4AAAAAAAAAAAAAAB3cAAAQO"
     },
     "screen": {
       "depth": 32,
@@ -155,10 +155,11 @@
   "llm_lookup_tab_index": 0,
   "main_window_state": {
     "__class__": "bytearray",
-    "__value__": "AAAA/wAAAAH9AAAAAgAAAAAAAAEAAAAED/wCAAAAAvsAAAAQAHQAbwBjAC0AZABvAGMAawEAAAAAAAAEDwAAAIoA////+wAAABYAcwBlAGEAcgBjAGgALQBkAG8AYwBrAAAAAAD/////AAAAmgD///8AAAABAAACWAAABA/8AgAAAAT7AAAAFgBsAG8AbwBrAHUAcAAtAGQAbwBjAGsAAAAAAAAABA8AAACeAP////sAAAAcAGIAbwBvAGsAbQBhAHIAawBzAC0AZABvAGMAawAAAAAA/////wAAAPIA////+wAAABwAaQBuAHMAcABlAGMAdABvAHIALQBkAG8AYwBrAAAAAAAAAAQQAAAAFAD////7AAAAHgBoAGkAZwBoAGwAaQBnAGgAdABzAC0AZABvAGMAawAAAAAAAAAEDwAAANcA////AAACsgAABA8AAAAEAAAABAAAAAgAAAAI/AAAAAEAAAAAAAAAAQAAAB4AYQBjAHQAaQBvAG4AcwBfAHQAbwBvAGwAYgBhAHICAAAAAP////8AAAAAAAAAAA=="
+    "__value__": "AAAA/wAAAAH9AAAAAgAAAAAAAAEAAAAEOPwCAAAAAvsAAAAQAHQAbwBjAC0AZABvAGMAawAAAAAAAAAEOAAAAIoA////+wAAABYAcwBlAGEAcgBjAGgALQBkAG8AYwBrAAAAAAD/////AAAAmgD///8AAAABAAACWAAABA/8AgAAAAT7AAAAFgBsAG8AbwBrAHUAcAAtAGQAbwBjAGsAAAAAAAAABA8AAACeAP////sAAAAcAGIAbwBvAGsAbQBhAHIAawBzAC0AZABvAGMAawAAAAAA/////wAAAPIA////+wAAABwAaQBuAHMAcABlAGMAdABvAHIALQBkAG8AYwBrAAAAAAAAAAQQAAAAFAD////7AAAAHgBoAGkAZwBoAGwAaQBnAGgAdABzAC0AZABvAGMAawAAAAAAAAAEDwAAANcA////AAAHeAAABA8AAAAEAAAABAAAAAgAAAAI/AAAAAEAAAAAAAAAAQAAAB4AYQBjAHQAaQBvAG4AcwBfAHQAbwBvAGwAYgBhAHICAAAAAP////8AAAAAAAAAAA=="
   },
   "old_prefs_migrated": true,
   "session_data": {
+    "base_font_size": 23,
     "controls_help_shown_count": 2,
     "standalone_font_settings": {},
     "standalone_misc_settings": {
@@ -168,6 +169,18 @@
       "singleinstance": false
     },
     "standalone_recently_opened": [
+      {
+        "key": "/home/cl1ngz/Downloads/FINAL PYTAŃ.pdf",
+        "pathtoebook": "/home/cl1ngz/Downloads/FINAL PYTAŃ.pdf",
+        "timestamp": "2026-06-22T04:46:11.977Z",
+        "title": "FINAL PYTAŃ"
+      },
+      {
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Unknown/Biblia Tysiaclecia. Pismo Swiete Starego i Nowego Testamentu_ (927)/Biblia Tysiaclecia. Pismo Swiete Starego i - Unknown.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Unknown/Biblia Tysiaclecia. Pismo Swiete Starego i Nowego Testamentu_ (927)/Biblia Tysiaclecia. Pismo Swiete Starego i - Unknown.epub",
+        "timestamp": "2026-06-19T20:35:13.694Z",
+        "title": "Biblia Tysiąclecia. Pismo Święte Starego i Nowego Testamentu."
+      },
       {
         "key": "/home/cl1ngz/Downloads/Systemy Operacyjne.pdf",
         "pathtoebook": "/home/cl1ngz/Downloads/Systemy Operacyjne.pdf",
@@ -365,24 +378,6 @@
         "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/R. A. Salvatore/Grzbiet swiata (869)/Grzbiet swiata - R. A. Salvatore.epub",
         "timestamp": "2026-05-12T15:16:09.780Z",
         "title": "Legenda Drizzta 12. Ścieżki Mroku 2. Grzbiet świata"
-      },
-      {
-        "authors": [
-          "R. A. Salvatore"
-        ],
-        "key": "/home/cl1ngz/Documents/Calibre_Libarary/R. A. Salvatore/Bezglosna Klinga (871)/Bezglosna Klinga - R. A. Salvatore.epub",
-        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/R. A. Salvatore/Bezglosna Klinga (871)/Bezglosna Klinga - R. A. Salvatore.epub",
-        "timestamp": "2026-05-12T15:16:02.870Z",
-        "title": "Legenda Drizzta 11. Ścieżki Mroku 1. Bezgłośna Klinga"
-      },
-      {
-        "authors": [
-          "R.A. Salvatore"
-        ],
-        "key": "/home/cl1ngz/Documents/Calibre_Libarary/R.A. Salvatore/Droga Do Switu (867)/Droga Do Switu - R.A. Salvatore.epub",
-        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/R.A. Salvatore/Droga Do Switu (867)/Droga Do Switu - R.A. Salvatore.epub",
-        "timestamp": "2026-05-12T15:15:55.743Z",
-        "title": "10.Droga Do Świtu"
       }
     ]
   }
