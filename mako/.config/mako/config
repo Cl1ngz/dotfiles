@@ -19,26 +19,26 @@ border-radius=12
 
 # Colors generated dynamically by Matugen
 background-color=#111318e6
-text-color=#e1e2e9
-border-color=#a5c8ff
+text-color=#e2e2e9
+border-color=#aac7ff
 
 # Low Urgency
 [urgency=low]
 background-color=#191c20e6
-text-color=#e1e2e9
-border-color=#8d9199
+text-color=#e2e2e9
+border-color=#8e9099
 default-timeout=5000
 
 # Normal Urgency
 [urgency=normal]
 background-color=#1d2024e6
-text-color=#e1e2e9
-border-color=#a5c8ff
+text-color=#e2e2e9
+border-color=#aac7ff
 default-timeout=10000
 
 # Critical Urgency
 [urgency=critical]
 background-color=#282a2fe6
-text-color=#e1e2e9
+text-color=#e2e2e9
 border-color=#ffb4ab
 default-timeout=0
