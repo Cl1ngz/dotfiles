@@ -12,6 +12,7 @@
 **/starship.toml
 # dunst notifications
 **/dunstrc
+**/mako/config
 # gtk
 **/gtk.css
 **/gtk-dark.css
