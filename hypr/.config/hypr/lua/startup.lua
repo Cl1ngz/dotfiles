@@ -11,7 +11,8 @@ hl.on("hyprland.start", function()
 
 		-- System Services
 		"awww-daemon",
-		"waybar",
+		-- "waybar",
+		"quickshell -p ~/.config/quickshell/bar.qml",
 		"dunst",
 		"blueman-applet",
 		"nm-applet --indicator",

@@ -13,7 +13,8 @@ hl.bind("Print", hl.dsp.exec_cmd('grim -g "$(slurp)" - | swappy -f -'))
 
 -- █   ▄▀▄ █ █ █▄ █ ▄▀▀ █▄█ ██▀ █▀▄
 -- █▄▄ █▀█ ▀▄█ █ ▀█ ▀▄▄ █ █ █▄▄ █▀▄
-hl.bind(mainMod .. " + SHIFT + X", hl.dsp.exec_cmd(rofi_scripts .. "/wallpaper_choser.sh"))
+-- hl.bind(mainMod .. " + SHIFT + X", hl.dsp.exec_cmd(rofi_scripts .. "/wallpaper_choser.sh"))
+hl.bind(mainMod .. " + SHIFT + X", hl.dsp.exec_cmd("quickshell -p ~/.config/quickshell/wallpapers.qml "))
 hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("rofi -show drun"))
 -- hl.bind("ALT + V", hl.dsp.exec_cmd("cliphist list | rofi -dmenu | cliphist decode | wl-copy"))
 hl.bind("ALT + V", hl.dsp.exec_cmd("quickshell -p ~/.config/quickshell/clipboard.qml"))
