@@ -87,5 +87,15 @@ return {
         end,
       },
     })
+
+    local qmlls_bin = vim.fn.executable("qmlls6") == 1 and "qmlls6"
+      or (vim.fn.executable("qmlls") == 1 and "qmlls" or "/usr/lib/qt6/bin/qmlls")
+
+    vim.lsp.config("qmlls", {
+      capabilities = capabilities,
+      cmd = { qmlls_bin, "-E" },
+      filetypes = { "qml", "qmljs" },
+    })
+    vim.lsp.enable("qmlls")
   end,
 }
