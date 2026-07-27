@@ -38,9 +38,21 @@ Pill {
     // ---- version-safe device actions ---------------------------------
     // Prefer the native API; fall back to bluetoothctl when a method is
     // missing on older Quickshell builds.
+    // Address of the device a pairing chain is currently running for.
+    property string pairingAddress: ""
+
     function devicePair(d) {
-        try { d.trusted = true; d.pair(); }
-        catch (e) { btctl.run(["bluetoothctl", "pair", d.address]); }
+        // Pairing needs an agent registered with BlueZ to answer the
+        // handshake; quickshell doesn't register one, so a native pair()
+        // can silently fail. bluetoothctl brings its own agent, so the
+        // whole chain goes through it: pair, trust, connect.
+        const addr = d.address;
+        if (!/^[0-9A-Fa-f:]+$/.test(addr)) return;
+        pairingAddress = addr;
+        btctl.run(["sh", "-c",
+            "bluetoothctl -- pair " + addr +
+            " && bluetoothctl -- trust " + addr +
+            " && bluetoothctl -- connect " + addr]);
     }
     function deviceForget(d) {
         try { d.forget(); }
@@ -50,6 +62,7 @@ Pill {
     Process {
         id: btctl
         function run(cmd) { running = false; command = cmd; running = true; }
+        onExited: btPill.pairingAddress = ""
     }
 
     function deviceSetConnected(d, want) {
@@ -89,7 +102,7 @@ Pill {
             Text {
                 text: {
                     const d = deviceRow.modelData;
-                    if (d.pairing) return "pairing…";
+                    if (d.pairing || d.address === btPill.pairingAddress) return "pairing…";
                     if (d.connected) {
                         const batt = d.batteryAvailable
                             ? "  ·  " + Math.round(d.battery * 100) + "%" : "";
