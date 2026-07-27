@@ -17,6 +17,7 @@ Rectangle {
     property int cpuTemp: -1
     property int gpuPercent: -1
     property int gpuTemp: -1
+    property string gpuVram: ""
     property int igpuPercent: -1
     property int igpuTemp: -1
     property bool showLabels: false
@@ -145,7 +146,7 @@ Rectangle {
                   "case \"$(cat $h/name 2>/dev/null)\" in coretemp|k10temp|zenpower) " +
                   "head -c-1 $h/temp1_input 2>/dev/null; break;; esac; done; " +
                   "echo; echo @@@; " +
-                  "nvidia-smi --query-gpu=utilization.gpu,temperature.gpu --format=csv,noheader,nounits 2>/dev/null; " +
+                  "nvidia-smi --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null; " +
                   "echo @@@; " +
                   "for c in /sys/class/drm/card?; do " +
                   "[ \"$(cat $c/device/vendor 2>/dev/null)\" = 0x1002 ] || continue; " +
@@ -197,9 +198,14 @@ Rectangle {
         if (gpuParts.length >= 2 && !isNaN(gpuParts[0])) {
             gpuPercent = gpuParts[0];
             gpuTemp = isNaN(gpuParts[1]) ? -1 : gpuParts[1];
+            // memory.used / memory.total arrive in MiB
+            gpuVram = (gpuParts.length >= 4 && !isNaN(gpuParts[2]) && !isNaN(gpuParts[3]))
+                ? (gpuParts[2] / 1024).toFixed(1) + " / " + (gpuParts[3] / 1024).toFixed(1) + " GB"
+                : "";
         } else {
             gpuPercent = -1;
             gpuTemp = -1;
+            gpuVram = "";
         }
 
         // AMD iGPU: line 0 = busy %, line 1 = temp in millidegrees.
@@ -414,6 +420,7 @@ Rectangle {
                     title: "GPU · NVIDIA"
                     percent: sysStats.gpuPercent
                     temp: sysStats.gpuTemp
+                    detail: sysStats.gpuVram
                     history: sysStats.gpuHistory
                 }
 
