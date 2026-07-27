@@ -40,3 +40,8 @@ thunar-volman
 thunar-archive-plugin
 gvfs
 cliphist
+ffmpeg
+gst-plugins-good
+gst-plugins-bad
+gst-plugins-ugly
+gst-libav

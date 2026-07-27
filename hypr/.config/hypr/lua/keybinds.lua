@@ -22,7 +22,8 @@ hl.bind("ALT + V", hl.dsp.exec_cmd("quickshell -p ~/.config/quickshell/clipboard
 -- ▀▄▀▄▀ █ █ ▀█ █▄▀ ▀▄▀ ▀▄▀▄▀   █ ▀ █ █▀█ █ ▀█ █▀█ ▀▄█ █ ▀ █ █▄▄ █ ▀█  █
 hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd("kitty"))
 hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.window.close())
-hl.bind(mainMod .. " + M", hl.dsp.exec_cmd(rofi_scripts .. "/powermenu.sh"))
+-- hl.bind(mainMod .. " + M", hl.dsp.exec_cmd(rofi_scripts .. "/powermenu.sh"))
+hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("quickshell -p ~/.config/quickshell/powermenu.qml"))
 hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exit())
 
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit")) -- dwindle
