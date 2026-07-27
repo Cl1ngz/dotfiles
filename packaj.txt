@@ -39,4 +39,4 @@ tumbler
 thunar-volman
 thunar-archive-plugin
 gvfs
-
+cliphist
