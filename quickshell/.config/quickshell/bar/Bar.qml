@@ -20,6 +20,9 @@ PanelWindow {
 
     color: "transparent"
 
+    NotifPopups {}
+    Osd {}
+
     // ---------------- LEFT ----------------
     Island {
         anchors.left: parent.left
@@ -58,6 +61,7 @@ PanelWindow {
         AudioPill { isSink: true; anchors.verticalCenter: parent.verticalCenter }
         SysStats {}
         Sep {}
+        NotifBell { anchors.verticalCenter: parent.verticalCenter }
         ClockPill { anchors.verticalCenter: parent.verticalCenter }
         Sep { visible: trayWidget.visible }
         Tray { id: trayWidget }
