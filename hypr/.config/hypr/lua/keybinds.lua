@@ -3,8 +3,6 @@
 local mainMod = "SUPER"
 
 -- Helper variables for paths
-local scripts = os.getenv("HOME") .. "/.config/waybar/scripts"
-local rofi_scripts = os.getenv("HOME") .. "/.config/rofi/Scripts"
 local custom_scripts = os.getenv("HOME") .. "/Documents/Scripts"
 
 -- █▀ █▀▀ █▀█ █▀▀ █▀▀ █▄░█ █▀ █░█ █▀█ ▀█▀
@@ -13,18 +11,14 @@ hl.bind("Print", hl.dsp.exec_cmd('grim -g "$(slurp)" - | swappy -f -'))
 
 -- █   ▄▀▄ █ █ █▄ █ ▄▀▀ █▄█ ██▀ █▀▄
 -- █▄▄ █▀█ ▀▄█ █ ▀█ ▀▄▄ █ █ █▄▄ █▀▄
--- hl.bind(mainMod .. " + SHIFT + X", hl.dsp.exec_cmd(rofi_scripts .. "/wallpaper_choser.sh"))
 hl.bind(mainMod .. " + SHIFT + X", hl.dsp.exec_cmd("quickshell -p ~/.config/quickshell/wallpapers.qml "))
--- hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("rofi -show drun"))
 hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("quickshell -p ~/.config/quickshell/launcher.qml"))
--- hl.bind("ALT + V", hl.dsp.exec_cmd("cliphist list | rofi -dmenu | cliphist decode | wl-copy"))
 hl.bind("ALT + V", hl.dsp.exec_cmd("quickshell -p ~/.config/quickshell/clipboard.qml"))
 
 -- █   █ █ █▄ █ █▀▄ ▄▀▄ █   █   █▄ ▄█ ▄▀▄ █▄ █ ▄▀▄ ▄▀  █▄ ▄█ ██▀ █▄ █ ▀█▀
 -- ▀▄▀▄▀ █ █ ▀█ █▄▀ ▀▄▀ ▀▄▀▄▀   █ ▀ █ █▀█ █ ▀█ █▀█ ▀▄█ █ ▀ █ █▄▄ █ ▀█  █
 hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd("kitty"))
 hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.window.close())
--- hl.bind(mainMod .. " + M", hl.dsp.exec_cmd(rofi_scripts .. "/powermenu.sh"))
 hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("quickshell -p ~/.config/quickshell/powermenu.qml"))
 hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exit())
 
@@ -87,22 +81,16 @@ hl.bind(mainMod .. " + CTRL + 2", hl.dsp.exec_cmd(custom_scripts .. "/move_works
 
 -- █▄ ▄█ █ █ █   ▀█▀ █ █▄ ▄█ ██▀ █▀▄ █ ▄▀▄   █▄▀ ██▀ ▀▄▀ ▄▀▀
 -- █ ▀ █ ▀▄█ █▄▄  █  █ █ ▀ █ █▄▄ █▄▀ █ █▀█   █ █ █▄▄  █  ▄██
-local media_keys = {
-	XF86AudioRaiseVolume = "--inc",
-	XF86AudioLowerVolume = "--dec",
-	XF86AudioMicMute = "--toggle-mic",
-	XF86AudioMute = "--toggle",
-}
-
-for key, arg in pairs(media_keys) do
-	hl.bind(key, hl.dsp.exec_cmd(scripts .. "/volume " .. arg))
-end
+hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 2%+"))
+hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%-"))
+hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"))
+hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"))
 
 -- Brightness
-hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd(scripts .. "/brightness --inc"))
-hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd(scripts .. "/brightness --dec"))
-hl.bind("XF86KbdBrightnessUp", hl.dsp.exec_cmd(scripts .. "/kb-brightness --inc"))
-hl.bind("XF86KbdBrightnessDown", hl.dsp.exec_cmd(scripts .. "/kb-brightness --dec"))
+hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl -q s 5%+"))
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl -q s 5%-"))
+hl.bind("XF86KbdBrightnessUp", hl.dsp.exec_cmd("brightnessctl -q -d '*kbd_backlight*' s 10%+"))
+hl.bind("XF86KbdBrightnessDown", hl.dsp.exec_cmd("brightnessctl -q -d '*kbd_backlight*' s 10%-"))
 
 -- Player Controls
 hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"))
