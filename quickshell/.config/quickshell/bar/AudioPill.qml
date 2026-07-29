@@ -2,14 +2,16 @@ import QtQuick
 import Quickshell.Services.Pipewire
 import qs
 
-// Native pipewire, no pamixer/pactl/pavucontrol. One component serves
-// both directions: AudioPill { isSink: true } is the speaker,
-// isSink: false the microphone. Click mutes, scroll adjusts.
+// Native pipewire. One component serves both directions:
+// AudioPill { isSink: true } is the speaker, isSink: false the mic.
+// Left click opens the audio panel, right click mutes, middle click
+// toggles the inline percent, scroll adjusts volume.
 Pill {
     id: audioPill
 
     property bool isSink: true
-    toggleableLabel: true
+    // Set from Bar.qml; both pills share one AudioPanel.
+    property var panel: null
     labelVisible: false
 
     readonly property var node: isSink ? Pipewire.defaultAudioSink : Pipewire.defaultAudioSource
@@ -30,8 +32,16 @@ Pill {
     label: bound && !muted ? percent + "%" : ""
     tint: !bound || muted ? Colors.textFaint : Colors.textMain
 
-    onClicked: {
-        if (bound) node.audio.muted = !node.audio.muted;
+    onClicked: (button) => {
+        if (button === Qt.MiddleButton) {
+            labelVisible = !labelVisible;
+            return;
+        }
+        if (button === Qt.RightButton) {
+            if (bound) node.audio.muted = !node.audio.muted;
+            return;
+        }
+        if (panel !== null) panel.toggle(isSink ? 0 : 1);
     }
 
     onScrolled: (steps) => {

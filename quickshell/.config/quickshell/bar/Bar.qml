@@ -22,6 +22,7 @@ PanelWindow {
 
     NotifPopups {}
     Osd {}
+    AudioPanel { id: audioPanel; anchorItem: speakerPill }
 
     // ---------------- LEFT ----------------
     Island {
@@ -57,8 +58,9 @@ PanelWindow {
         Battery { id: battery; anchors.verticalCenter: parent.verticalCenter }
         Sep { visible: battery.visible && backlight.visible }
         Backlight { id: backlight; anchors.verticalCenter: parent.verticalCenter }
-        AudioPill { isSink: false; anchors.verticalCenter: parent.verticalCenter }
-        AudioPill { isSink: true; anchors.verticalCenter: parent.verticalCenter }
+        AudioPill { isSink: false; panel: audioPanel; anchors.verticalCenter: parent.verticalCenter }
+        AudioPill { id: speakerPill; isSink: true; panel: audioPanel; anchors.verticalCenter: parent.verticalCenter }
+        NetStatus { anchors.verticalCenter: parent.verticalCenter }
         SysStats {}
         Sep {}
         NotifBell { anchors.verticalCenter: parent.verticalCenter }
