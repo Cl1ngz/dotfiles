@@ -10,7 +10,7 @@ import qs
 Pill {
     id: bellPill
 
-    readonly property int count: Notifs.all.length
+    readonly property int count: Notifs.records.length
 
     icon: count > 0 ? "󰂚" : "󰂜"
     label: count > 0 ? String(count) : ""
@@ -18,7 +18,7 @@ Pill {
 
     onClicked: (button) => {
         if (button === Qt.RightButton) {
-            Notifs.dismissAll();
+            Notifs.forgetAll();
             return;
         }
         overlay.visible = !overlay.visible;
@@ -114,7 +114,7 @@ Pill {
                             id: clearMouse
                             anchors.fill: parent
                             hoverEnabled: true
-                            onClicked: Notifs.dismissAll()
+                            onClicked: Notifs.forgetAll()
                         }
                     }
                 }
@@ -135,15 +135,17 @@ Pill {
                     clip: true
                     spacing: 6
                     boundsBehavior: Flickable.StopAtBounds
-                    model: Notifs.all.slice().reverse()
+                    model: Notifs.records.slice().reverse()
 
                     Behavior on height { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
 
                     delegate: Rectangle {
                         id: item
                         required property var modelData
-                        readonly property bool critical:
-                            modelData.urgency === NotificationUrgency.Critical
+                        readonly property bool critical: modelData.urgency === "critical"
+                        // Only notifications still held by the server can
+                        // have their actions invoked; older ones are text.
+                        readonly property var liveObj: Notifs.liveFor(modelData)
 
                         width: centerList.width
                         implicitHeight: itemContent.implicitHeight + 20
@@ -184,7 +186,7 @@ Pill {
                                     }
                                     Text {
                                         anchors.verticalCenter: parent.verticalCenter
-                                        text: Notifs.timeAgo(item.modelData.id)
+                                        text: Notifs.timeAgo(item.modelData.time)
                                         font.family: "JetBrainsMono Nerd Font"
                                         font.pixelSize: 10
                                         color: Colors.textFaint
@@ -204,7 +206,7 @@ Pill {
                                         anchors.fill: parent
                                         anchors.margins: -6
                                         hoverEnabled: true
-                                        onClicked: Notifs.dismiss(item.modelData)
+                                        onClicked: Notifs.forget(item.modelData)
                                     }
                                 }
                             }
@@ -234,11 +236,11 @@ Pill {
                             }
 
                             Row {
-                                visible: item.modelData.actions.length > 0
+                                visible: item.liveObj !== null && item.liveObj.actions.length > 0
                                 spacing: 6
 
                                 Repeater {
-                                    model: item.modelData.actions
+                                    model: item.liveObj !== null ? item.liveObj.actions : []
 
                                     Rectangle {
                                         required property var modelData
@@ -263,7 +265,7 @@ Pill {
                                             hoverEnabled: true
                                             onClicked: {
                                                 parent.modelData.invoke();
-                                                Notifs.dismiss(item.modelData);
+                                                Notifs.forget(item.modelData);
                                             }
                                         }
                                     }

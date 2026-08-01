@@ -59,6 +59,33 @@ Pill {
         catch (e) { btctl.run(["bluetoothctl", "remove", d.address]); }
     }
 
+    // Trust is what lets the DEVICE start the connection: an untrusted
+    // device can only be connected while it is in pairing mode, which is
+    // why headphones seemed to need re-pairing after every reboot.
+    // Trusting once makes BlueZ accept its reconnect attempts forever.
+    function deviceSetTrusted(d, want) {
+        const addr = d.address;
+        if (!/^[0-9A-Fa-f:]+$/.test(addr)) return;
+        // Set via the native property when present, and always mirror it
+        // through bluetoothctl so it lands in BlueZ's stored config.
+        try { d.trusted = want; } catch (e) { /* fall through to cli */ }
+        btctl.run(["bluetoothctl", want ? "trust" : "untrust", addr]);
+    }
+
+    // One-shot repair for devices paired before trust was being set.
+    function trustAllPaired() {
+        const addrs = Bluetooth.devices.values
+            .filter((d) => d.paired && /^[0-9A-Fa-f:]+$/.test(d.address))
+            .map((d) => d.address);
+        if (addrs.length === 0) return;
+        btctl.run(["sh", "-c",
+            'for a in "$@"; do bluetoothctl -- trust "$a"; done', "sh"].concat(addrs));
+    }
+
+    function isTrusted(d) {
+        return d.trusted === true;
+    }
+
     Process {
         id: btctl
         function run(cmd) { running = false; command = cmd; running = true; }
@@ -106,31 +133,75 @@ Pill {
                     if (d.connected) {
                         const batt = d.batteryAvailable
                             ? "  ·  " + Math.round(d.battery * 100) + "%" : "";
-                        return "connected" + batt;
+                        const tr = btPill.isTrusted(d) ? "" : "  ·  NOT trusted";
+                        return "connected" + batt + tr;
                     }
-                    if (d.paired) return "disconnected";
+                    if (d.paired)
+                        return btPill.isTrusted(d) ? "disconnected  ·  trusted"
+                                                   : "disconnected  ·  NOT trusted";
                     return "available";
                 }
                 font.family: "JetBrainsMono Nerd Font"
                 font.pixelSize: 10
-                color: deviceRow.modelData.connected ? Colors.accent : Colors.textFaint
+                color: deviceRow.modelData.paired && !btPill.isTrusted(deviceRow.modelData)
+                     ? Colors.warn
+                     : deviceRow.modelData.connected ? Colors.accent : Colors.textFaint
             }
         }
 
-        Text {
+        Row {
             anchors.right: parent.right
             anchors.rightMargin: 10
             anchors.verticalCenter: parent.verticalCenter
-            visible: rowMouse.containsMouse
-            text: {
-                const d = deviceRow.modelData;
-                if (d.connected) return "disconnect";
-                if (d.paired) return "connect";
-                return "pair";
+            spacing: 8
+
+            // Trust toggle: the fix for "needs pairing mode every time".
+            Rectangle {
+                anchors.verticalCenter: parent.verticalCenter
+                visible: deviceRow.modelData.paired
+                    && (rowMouse.containsMouse || !btPill.isTrusted(deviceRow.modelData))
+                implicitWidth: trustLabel.implicitWidth + 14
+                implicitHeight: 20
+                radius: 6
+                color: trustMouse.containsMouse ? Colors.surface1
+                     : btPill.isTrusted(deviceRow.modelData) ? "transparent"
+                     : Qt.alpha(Colors.warn, 0.18)
+                border.width: 1
+                border.color: btPill.isTrusted(deviceRow.modelData)
+                    ? Colors.outline : Qt.alpha(Colors.warn, 0.5)
+                Behavior on color { ColorAnimation { duration: 120 } }
+
+                Text {
+                    id: trustLabel
+                    anchors.centerIn: parent
+                    text: btPill.isTrusted(deviceRow.modelData) ? "untrust" : "trust"
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 9
+                    color: btPill.isTrusted(deviceRow.modelData) ? Colors.textFaint : Colors.warn
+                }
+
+                MouseArea {
+                    id: trustMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: btPill.deviceSetTrusted(deviceRow.modelData,
+                        !btPill.isTrusted(deviceRow.modelData))
+                }
             }
-            font.family: "JetBrainsMono Nerd Font"
-            font.pixelSize: 10
-            color: Colors.textDim
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                visible: rowMouse.containsMouse
+                text: {
+                    const d = deviceRow.modelData;
+                    if (d.connected) return "disconnect";
+                    if (d.paired) return "connect";
+                    return "pair";
+                }
+                font.family: "JetBrainsMono Nerd Font"
+                font.pixelSize: 10
+                color: Colors.textDim
+            }
         }
 
         MouseArea {
@@ -323,13 +394,45 @@ Pill {
                         color: Colors.textFaint
                     }
 
-                    Text {
+                    Item {
                         visible: btPill.btEnabled && deviceColumn.pairedList.length > 0
-                        text: "PAIRED"
-                        font.family: "JetBrainsMono Nerd Font"
-                        font.pixelSize: 9
-                        font.letterSpacing: 1
-                        color: Colors.textFaint
+                        width: parent.width
+                        height: 16
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "PAIRED"
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 9
+                            font.letterSpacing: 1
+                            color: Colors.textFaint
+                        }
+
+                        Rectangle {
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: deviceColumn.pairedList.some((d) => !btPill.isTrusted(d))
+                            implicitWidth: taLabel.implicitWidth + 14
+                            implicitHeight: 18
+                            radius: 6
+                            color: taMouse.containsMouse ? Qt.alpha(Colors.warn, 0.28)
+                                                         : Qt.alpha(Colors.warn, 0.15)
+                            Behavior on color { ColorAnimation { duration: 120 } }
+                            Text {
+                                id: taLabel
+                                anchors.centerIn: parent
+                                text: "trust all"
+                                font.family: "JetBrainsMono Nerd Font"
+                                font.pixelSize: 9
+                                color: Colors.warn
+                            }
+                            MouseArea {
+                                id: taMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                onClicked: btPill.trustAllPaired()
+                            }
+                        }
                     }
 
                     Repeater {
