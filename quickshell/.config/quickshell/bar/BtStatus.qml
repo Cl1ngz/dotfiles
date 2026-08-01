@@ -44,23 +44,31 @@ Pill {
     function devicePair(d) {
         // Pairing needs an agent registered with BlueZ to answer the
         // handshake; quickshell doesn't register one, so bluetoothctl
-        // (which brings its own) runs the whole chain.
+        // (which brings its own) runs the chain.
         //
-        // The `remove` first is the important part: a half-bonded record
-        // -- Paired: no but the device still known, which is what an
-        // adapter toggle can leave behind when the link key was never
-        // written -- makes every later pair attempt fail. Clearing it
-        // first turns "failed to pair" into a clean bond.
+        // Two things this has to get right:
         //
-        // bluetoothctl exits 0 even when pairing fails, so the result is
-        // verified by reading Paired: back rather than by exit status.
+        // 1. Only remove a STALE record (known/trusted but not actually
+        //    bonded). Removing a freshly discovered device deletes it
+        //    from BlueZ entirely -- it vanishes from the list and pairing
+        //    then fails with "not available".
+        //
+        // 2. Keep discovery running across the pair. A device BlueZ is
+        //    not actively seeing cannot be paired, and each
+        //    non-interactive bluetoothctl call is its own session, so a
+        //    scan is started in the background first and left running.
+        //
+        // bluetoothctl exits 0 even when pairing fails, so success is
+        // verified by reading Paired: back instead.
         const addr = d.address;
         if (!/^[0-9A-Fa-f:]+$/.test(addr)) return;
+        const stale = !d.paired && isTrusted(d);
         pairingAddress = addr;
         btctl.run(["sh", "-c",
-            'a="$1"; ' +
-            'bluetoothctl remove "$a" >/dev/null 2>&1; ' +
-            'sleep 0.3; ' +
+            'a="$1"; stale="$2"; ' +
+            '[ "$stale" = "1" ] && bluetoothctl remove "$a" >/dev/null 2>&1; ' +
+            'bluetoothctl --timeout 25 scan on >/dev/null 2>&1 & ' +
+            'sleep 3; ' +
             'out=$(bluetoothctl --timeout 20 pair "$a" 2>&1); ' +
             'if bluetoothctl info "$a" | grep -q "Paired: yes"; then ' +
             '  bluetoothctl trust "$a" >/dev/null 2>&1; ' +
@@ -71,7 +79,7 @@ Pill {
             '  echo "pair failed -- put the device in pairing mode and retry"; ' +
             '  exit 1; ' +
             'fi',
-            "sh", addr]);
+            "sh", addr, stale ? "1" : "0"]);
     }
 
     // Same chain for a device that is known but not actually bonded.
