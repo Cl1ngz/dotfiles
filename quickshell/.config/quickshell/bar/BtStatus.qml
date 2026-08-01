@@ -152,11 +152,35 @@ Pill {
         onTriggered: trustProbe.refresh()
     }
 
+    // Last line bluetoothctl printed, shown in the panel header. Without
+    // this, a failed pair/trust/connect looked identical to nothing
+    // happening at all.
+    property string lastMessage: ""
+
     Process {
         id: btctl
-        function run(cmd) { running = false; command = cmd; running = true; }
-        onExited: {
+        function run(cmd) {
+            btPill.lastMessage = "";
+            running = false;
+            command = cmd;
+            running = true;
+        }
+        stdout: StdioCollector {
+            onStreamFinished: {
+                // Keep the most interesting line, not the banner.
+                const lines = text.trim().split('\n')
+                    .filter((l) => /fail|error|not available|successful|Attempting|Changing/i.test(l));
+                if (lines.length > 0) btPill.lastMessage = lines[lines.length - 1].trim();
+            }
+        }
+        stderr: StdioCollector {
+            onStreamFinished: if (text.trim() !== "")
+                btPill.lastMessage = text.trim().split('\n')[0]
+        }
+        onExited: (code) => {
             btPill.pairingAddress = "";
+            if (code !== 0 && btPill.lastMessage === "")
+                btPill.lastMessage = "command failed (exit " + code + ")";
             trustSettle.restart();
         }
     }
@@ -233,7 +257,6 @@ Pill {
             Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 visible: deviceRow.modelData.paired
-                    && (rowMouse.containsMouse || !btPill.isTrusted(deviceRow.modelData))
                 implicitWidth: trustLabel.implicitWidth + 14
                 implicitHeight: 20
                 radius: 6
@@ -381,6 +404,21 @@ Pill {
                         font.pixelSize: 14
                         font.weight: Font.DemiBold
                         color: Colors.textMain
+                    }
+
+                    Text {
+                        anchors.left: parent.left
+                        anchors.leftMargin: 84
+                        anchors.right: parent.right
+                        anchors.rightMargin: 48
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: btPill.lastMessage !== ""
+                        text: btPill.lastMessage
+                        elide: Text.ElideRight
+                        font.family: "JetBrainsMono Nerd Font"
+                        font.pixelSize: 9
+                        color: /fail|error|not available/i.test(btPill.lastMessage)
+                            ? Colors.danger : Colors.textFaint
                     }
 
                     Rectangle {
