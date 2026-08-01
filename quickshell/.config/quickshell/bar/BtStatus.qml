@@ -77,6 +77,10 @@ Pill {
     // Same chain for a device that is known but not actually bonded.
     function deviceRepair(d) { devicePair(d); }
 
+    // Address awaiting a confirmed forget. Removing a pairing is
+    // destructive, so it takes two right clicks rather than one.
+    property string pendingForget: ""
+
     function deviceForget(d) {
         const addr = d.address;
         if (pendingForget !== addr) { pendingForget = addr; return; }
