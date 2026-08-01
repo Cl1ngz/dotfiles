@@ -103,11 +103,22 @@ Pill {
 
     Process {
         id: trustProbe
-        command: ["sh", "-c",
-            'for a in $(bluetoothctl devices Paired | awk \'{print $2}\'); do ' +
-            'printf "%s=%s\n" "$a" ' +
-            '"$(bluetoothctl info "$a" | awk -F": " \'/Trusted:/{print $2; exit}\')"; ' +
-            'done']
+        // Addresses come from Quickshell's device list, not from
+        // `bluetoothctl devices Paired`: that command is racy in
+        // non-interactive use and intermittently prints nothing, which
+        // made every device look unpaired/untrusted at random.
+        function refresh() {
+            const addrs = Bluetooth.devices.values
+                .filter((d) => d.paired && /^[0-9A-Fa-f:]+$/.test(d.address))
+                .map((d) => d.address);
+            if (addrs.length === 0) { btPill.trustMap = ({}); return; }
+            running = false;
+            command = ["sh", "-c",
+                'for a in "$@"; do printf "%s=%s\n" "$a" ' +
+                '"$(bluetoothctl info "$a" | awk -F": " \'/Trusted:/{print $2; exit}\')"; ' +
+                'done', "sh"].concat(addrs);
+            running = true;
+        }
         stdout: StdioCollector {
             onStreamFinished: {
                 const m = ({});
@@ -121,7 +132,6 @@ Pill {
                 btPill.trustMap = m;
             }
         }
-        function refresh() { running = false; running = true; }
     }
 
     // Refresh trust state whenever the panel opens or an action finishes.
