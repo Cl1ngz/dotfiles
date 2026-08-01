@@ -43,21 +43,39 @@ Pill {
 
     function devicePair(d) {
         // Pairing needs an agent registered with BlueZ to answer the
-        // handshake; quickshell doesn't register one, so a native pair()
-        // can silently fail. bluetoothctl brings its own agent, so the
-        // whole chain goes through it: pair, trust, connect.
+        // handshake; quickshell doesn't register one, so bluetoothctl
+        // (which brings its own) runs the whole chain.
+        //
+        // The `remove` first is the important part: a half-bonded record
+        // -- Paired: no but the device still known, which is what an
+        // adapter toggle can leave behind when the link key was never
+        // written -- makes every later pair attempt fail. Clearing it
+        // first turns "failed to pair" into a clean bond.
+        //
+        // bluetoothctl exits 0 even when pairing fails, so the result is
+        // verified by reading Paired: back rather than by exit status.
         const addr = d.address;
         if (!/^[0-9A-Fa-f:]+$/.test(addr)) return;
         pairingAddress = addr;
         btctl.run(["sh", "-c",
-            "bluetoothctl -- pair " + addr +
-            " && bluetoothctl -- trust " + addr +
-            " && bluetoothctl -- connect " + addr]);
+            'a="$1"; ' +
+            'bluetoothctl remove "$a" >/dev/null 2>&1; ' +
+            'sleep 0.3; ' +
+            'out=$(bluetoothctl --timeout 20 pair "$a" 2>&1); ' +
+            'if bluetoothctl info "$a" | grep -q "Paired: yes"; then ' +
+            '  bluetoothctl trust "$a" >/dev/null 2>&1; ' +
+            '  bluetoothctl connect "$a" >/dev/null 2>&1; ' +
+            '  echo "paired and connected"; ' +
+            'else ' +
+            '  echo "$out" | grep -iE "fail|error|not available" | tail -n1 || ' +
+            '  echo "pair failed -- put the device in pairing mode and retry"; ' +
+            '  exit 1; ' +
+            'fi',
+            "sh", addr]);
     }
-    // Address awaiting a confirmed forget. Removing a pairing is
-    // destructive and used to fire on a single right click, which is far
-    // too easy to hit by accident next to a list you click constantly.
-    property string pendingForget: ""
+
+    // Same chain for a device that is known but not actually bonded.
+    function deviceRepair(d) { devicePair(d); }
 
     function deviceForget(d) {
         const addr = d.address;
@@ -236,6 +254,8 @@ Pill {
                     if (d.paired)
                         return btPill.isTrusted(d) ? "disconnected  ·  trusted"
                                                    : "disconnected  ·  NOT trusted";
+                    if (btPill.isTrusted(d))
+                        return "trusted but NOT bonded  ·  click to re-pair";
                     return "available";
                 }
                 font.family: "JetBrainsMono Nerd Font"
