@@ -1,0 +1,23 @@
+# /etc/udev/rules.d/99-battery-charge-threshold.rules
+#
+# Let members of the wheel group set the battery charge limit without
+# authenticating. Writing this sysfs attribute normally needs root, and
+# routing that through pkexec means a password prompt on every change --
+# which, with no graphical polkit agent running, lands on whatever
+# terminal launched the shell and can lock the account.
+#
+# Install:
+#   sudo cp 99-battery-charge-threshold.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules
+#   sudo udevadm trigger --subsystem-match=power_supply
+#
+# Verify (should show group wheel and mode 664):
+#   ls -l /sys/class/power_supply/BAT*/charge_control_end_threshold
+#
+# If your user is not in wheel, change wheel below to a group you are in.
+
+ACTION=="add|change", SUBSYSTEM=="power_supply", KERNEL=="BAT*", \
+  RUN+="/bin/sh -c 'chgrp wheel /sys%p/charge_control_end_threshold 2>/dev/null; chmod 664 /sys%p/charge_control_end_threshold 2>/dev/null'"
+
+ACTION=="add|change", SUBSYSTEM=="power_supply", KERNEL=="BAT*", \
+  RUN+="/bin/sh -c 'chgrp wheel /sys%p/charge_stop_threshold 2>/dev/null; chmod 664 /sys%p/charge_stop_threshold 2>/dev/null'"

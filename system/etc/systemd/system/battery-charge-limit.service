@@ -1,0 +1,32 @@
+[Unit]
+# Re-applies the battery charge threshold, which the kernel resets on
+# every boot. Also runs after resume: some firmware clears the value
+# across suspend.
+Description=Apply battery charge limit
+After=multi-user.target suspend.target hibernate.target hybrid-sleep.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# Reads the limit from the file below and writes it to whichever
+# threshold attribute this machine exposes. The panel writes that same
+# file, so changing the limit needs no root -- only applying it at boot
+# does, which is this unit's whole job. Falls back to 100 if the file
+# is missing, unreadable, or not a sane number.
+#
+# Note: echo, not printf %s -- the value needs its trailing newline;
+# some drivers reject a write without one. Failures exit non-zero so
+# systemctl status shows a genuine failure instead of silent success.
+Environment=LIMIT_FILE=/home/cl1ngz/.config/battery-charge-limit
+ExecStart=/bin/sh -c 'LIMIT=$(tr -cd 0-9 < "$LIMIT_FILE" 2>/dev/null); \
+case "$LIMIT" in ""|*[!0-9]*) LIMIT=100 ;; esac; \
+[ "$LIMIT" -ge 20 ] && [ "$LIMIT" -le 100 ] || LIMIT=100; \
+for f in /sys/class/power_supply/BAT*/charge_control_end_threshold \
+         /sys/class/power_supply/BAT*/charge_stop_threshold; do \
+  [ -f "$f" ] || continue; \
+  if echo "$LIMIT" > "$f"; then echo "set $f to $LIMIT"; exit 0; fi; \
+  echo "failed to write $LIMIT to $f" >&2; exit 1; \
+done; echo "no charge threshold attribute found" >&2; exit 1'
+
+[Install]
+WantedBy=multi-user.target suspend.target hibernate.target hybrid-sleep.target
