@@ -82,14 +82,54 @@ Pill {
             'for a in "$@"; do bluetoothctl -- trust "$a"; done', "sh"].concat(addrs));
     }
 
+    // Real trust state, read from BlueZ rather than the QML property:
+    // the property reported true for every device on this build, which
+    // made the toggle show "untrust" always and hid the trust action.
+    // address -> true/false
+    property var trustMap: ({})
+
     function isTrusted(d) {
-        return d.trusted === true;
+        const v = trustMap[(d.address ?? "").toUpperCase()];
+        return v === undefined ? (d.trusted === true) : v;
+    }
+
+    Process {
+        id: trustProbe
+        command: ["sh", "-c",
+            'for a in $(bluetoothctl devices Paired | awk \'{print $2}\'); do ' +
+            'printf "%s=%s\n" "$a" ' +
+            '"$(bluetoothctl info "$a" | awk -F": " \'/Trusted:/{print $2; exit}\')"; ' +
+            'done']
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const m = ({});
+                for (const line of text.trim().split('\n')) {
+                    if (line === "") continue;
+                    const eq = line.lastIndexOf('=');
+                    if (eq === -1) continue;
+                    m[line.substring(0, eq).toUpperCase()] =
+                        line.substring(eq + 1).trim() === "yes";
+                }
+                btPill.trustMap = m;
+            }
+        }
+        function refresh() { running = false; running = true; }
+    }
+
+    // Refresh trust state whenever the panel opens or an action finishes.
+    Timer {
+        id: trustSettle
+        interval: 400
+        onTriggered: trustProbe.refresh()
     }
 
     Process {
         id: btctl
         function run(cmd) { running = false; command = cmd; running = true; }
-        onExited: btPill.pairingAddress = ""
+        onExited: {
+            btPill.pairingAddress = "";
+            trustSettle.restart();
+        }
     }
 
     function deviceSetConnected(d, want) {
@@ -245,7 +285,8 @@ Pill {
         exclusiveZone: 0
 
         onVisibleChanged: {
-            if (!visible) scanProcess.running = false;
+            if (visible) trustProbe.refresh();
+            else scanProcess.running = false;
         }
 
         // Click anywhere outside the card closes the panel.
