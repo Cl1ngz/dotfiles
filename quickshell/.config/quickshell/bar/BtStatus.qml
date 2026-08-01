@@ -42,48 +42,43 @@ Pill {
     property string pairingAddress: ""
 
     function devicePair(d) {
-        // Pairing needs an agent registered with BlueZ to answer the
-        // handshake; quickshell doesn't register one, so bluetoothctl
-        // (which brings its own) runs the chain.
-        //
-        // Two things this has to get right:
-        //
-        // 1. Only remove a STALE record (known/trusted but not actually
-        //    bonded). Removing a freshly discovered device deletes it
-        //    from BlueZ entirely -- it vanishes from the list and pairing
-        //    then fails with "not available".
-        //
-        // 2. Keep discovery running across the pair. A device BlueZ is
-        //    not actively seeing cannot be paired, and each
-        //    non-interactive bluetoothctl call is its own session, so a
-        //    scan is started in the background first and left running.
-        //
-        // bluetoothctl exits 0 even when pairing fails, so success is
-        // verified by reading Paired: back instead.
         const addr = d.address;
         if (!/^[0-9A-Fa-f:]+$/.test(addr)) return;
-        const stale = !d.paired && isTrusted(d);
         pairingAddress = addr;
-        btctl.run(["sh", "-c",
-            'a="$1"; stale="$2"; ' +
-            '[ "$stale" = "1" ] && bluetoothctl remove "$a" >/dev/null 2>&1; ' +
-            'bluetoothctl --timeout 25 scan on >/dev/null 2>&1 & ' +
-            'sleep 3; ' +
-            'out=$(bluetoothctl --timeout 20 pair "$a" 2>&1); ' +
-            'if bluetoothctl info "$a" | grep -q "Paired: yes"; then ' +
-            '  bluetoothctl trust "$a" >/dev/null 2>&1; ' +
-            '  bluetoothctl connect "$a" >/dev/null 2>&1; ' +
-            '  echo "paired and connected"; ' +
-            'else ' +
-            '  echo "$out" | grep -iE "fail|error|not available" | tail -n1 || ' +
-            '  echo "pair failed -- put the device in pairing mode and retry"; ' +
-            '  exit 1; ' +
-            'fi',
-            "sh", addr, stale ? "1" : "0"]);
+        lastMessage = "pairing…";
+        // A stale record (known/trusted but never bonded) blocks a new
+        // pair, so clear that case first -- but never a device that is
+        // merely discovered, or it vanishes from BlueZ entirely.
+        if (!d.paired && isTrusted(d)) btSession.send("remove " + addr);
+        btSession.send("scan on");
+        pairChain.addr = addr;
+        pairChain.restart();
     }
 
-    // Same chain for a device that is known but not actually bonded.
-    function deviceRepair(d) { devicePair(d); }
+    // Give discovery a moment, then pair in the SAME session.
+    Timer {
+        id: pairChain
+        property string addr: ""
+        interval: 2500
+        onTriggered: {
+            btSession.send("scan off");
+            btSession.send("pair " + addr);
+            trustChain.addr = addr;
+            trustChain.restart();
+        }
+    }
+
+    Timer {
+        id: trustChain
+        property string addr: ""
+        interval: 6000
+        onTriggered: {
+            btSession.send("trust " + addr);
+            btSession.send("connect " + addr);
+            btPill.pairingAddress = "";
+            trustSettle.restart();
+        }
+    }
 
     // Address awaiting a confirmed forget. Removing a pairing is
     // destructive, so it takes two right clicks rather than one.
@@ -93,8 +88,9 @@ Pill {
         const addr = d.address;
         if (pendingForget !== addr) { pendingForget = addr; return; }
         pendingForget = "";
-        try { d.forget(); }
-        catch (e) { btctl.run(["bluetoothctl", "remove", addr]); }
+        btSession.send("remove " + addr);
+        lastMessage = "removed " + addr;
+        trustSettle.restart();
     }
 
     // Trust is what lets the DEVICE start the connection: an untrusted
@@ -106,8 +102,8 @@ Pill {
         if (!/^[0-9A-Fa-f:]+$/.test(addr)) return;
         // Set via the native property when present, and always mirror it
         // through bluetoothctl so it lands in BlueZ's stored config.
-        try { d.trusted = want; } catch (e) { /* fall through to cli */ }
-        btctl.run(["bluetoothctl", want ? "trust" : "untrust", addr]);
+        btSession.send((want ? "trust " : "untrust ") + addr);
+        trustSettle.restart();
     }
 
     // One-shot repair for devices paired before trust was being set.
@@ -116,8 +112,8 @@ Pill {
             .filter((d) => d.paired && /^[0-9A-Fa-f:]+$/.test(d.address))
             .map((d) => d.address);
         if (addrs.length === 0) return;
-        btctl.run(["sh", "-c",
-            'for a in "$@"; do bluetoothctl -- trust "$a"; done', "sh"].concat(addrs));
+        for (const a of addrs) btSession.send("trust " + a);
+        trustSettle.restart();
     }
 
     // Real trust state, read from BlueZ rather than the QML property:
@@ -187,45 +183,56 @@ Pill {
     // happening at all.
     property string lastMessage: ""
 
+    // ONE long-lived bluetoothctl session, not a process per command.
+    //
+    // This is the difference between pairing working and not. Each
+    // `bluetoothctl pair X` invocation registers an agent, pairs, then
+    // exits -- and the exit tears down the link before the bond is
+    // written, which is exactly the "Paired: yes" immediately followed
+    // by "Paired: no" seen in the logs. Interactive bluetoothctl keeps
+    // one agent alive across pair -> trust -> connect, so the bond
+    // survives. Commands are written to its stdin.
     Process {
-        id: btctl
-        function run(cmd) {
-            btPill.lastMessage = "";
-            running = false;
-            command = cmd;
-            running = true;
-        }
-        stdout: StdioCollector {
-            onStreamFinished: {
-                // Keep the most interesting line, not the banner.
-                const lines = text.trim().split('\n')
-                    .filter((l) => /fail|error|not available|successful|Attempting|Changing/i.test(l));
-                if (lines.length > 0) btPill.lastMessage = lines[lines.length - 1].trim();
+        id: btSession
+        running: true
+        command: ["bluetoothctl"]
+        stdinEnabled: true
+
+        stdout: SplitParser {
+            onRead: (line) => {
+                const l = line.replace(/\x1b\[[0-9;]*m/g, "").trim();
+                if (l === "") return;
+                if (/Failed|error|not available|Authentication/i.test(l)) {
+                    btPill.lastMessage = l;
+                } else if (/successful|succeeded/i.test(l)) {
+                    btPill.lastMessage = l;
+                    trustSettle.restart();
+                } else if (/Paired: yes|Trusted: yes|Connected:/i.test(l)) {
+                    trustSettle.restart();
+                }
             }
         }
-        stderr: StdioCollector {
-            onStreamFinished: if (text.trim() !== "")
-                btPill.lastMessage = text.trim().split('\n')[0]
-        }
-        onExited: (code) => {
-            btPill.pairingAddress = "";
-            if (code !== 0 && btPill.lastMessage === "")
-                btPill.lastMessage = "command failed (exit " + code + ")";
-            trustSettle.restart();
+
+        function send(cmd) {
+            if (!running) { running = true; }
+            write(cmd + "\n");
         }
     }
 
-    function deviceSetConnected(d, want) {
-        // The connected property is the documented equivalent of
-        // connect()/disconnect(); fall back to bluetoothctl if a build
-        // doesn't expose it.
-        if (typeof d.connected === "boolean") d.connected = want;
-        else btctl.run(["bluetoothctl", want ? "connect" : "disconnect", d.address]);
+    // Register the agent once the session is up.
+    Timer {
+        interval: 700
+        running: true
+        repeat: false
+        onTriggered: {
+            btSession.send("agent on");
+            btSession.send("default-agent");
+        }
     }
 
     // One row, used by both the paired and available sections.
-    // Click: paired -> connect/disconnect toggle, unpaired -> pair.
-    // Right click on a paired device forgets it.
+    // Left click: paired -> connect/disconnect, otherwise pair.
+    // Right click twice: forget the pairing.
     component DeviceRow: Rectangle {
         id: deviceRow
         required property var modelData
@@ -252,17 +259,15 @@ Pill {
             Text {
                 text: {
                     const d = deviceRow.modelData;
-                    if (d.pairing || d.address === btPill.pairingAddress) return "pairing…";
                     if (d.address === btPill.pendingForget)
                         return "right click again to FORGET this pairing";
+                    if (d.pairing || d.address === btPill.pairingAddress) return "pairing…";
                     if (d.connected) {
                         const batt = d.batteryAvailable
                             ? "  ·  " + Math.round(d.battery * 100) + "%" : "";
                         const tr = btPill.isTrusted(d) ? "" : "  ·  NOT trusted";
                         return "connected" + batt + tr;
                     }
-                    if (d.address === btPill.pendingForget)
-                        return "right click again to FORGET this pairing";
                     if (d.paired)
                         return btPill.isTrusted(d) ? "disconnected  ·  trusted"
                                                    : "disconnected  ·  NOT trusted";
@@ -338,6 +343,7 @@ Pill {
             anchors.fill: parent
             hoverEnabled: true
             acceptedButtons: Qt.LeftButton | Qt.RightButton
+            z: -1
             onClicked: (event) => {
                 const d = deviceRow.modelData;
                 if (event.button === Qt.RightButton) {
@@ -352,12 +358,20 @@ Pill {
         }
     }
 
-    // Scanning: bluetoothctl with a timeout works on every Quickshell
-    // version; discovered devices surface through BlueZ into
-    // Bluetooth.devices either way. Auto-stops after 30s.
-    Process {
-        id: scanProcess
-        command: ["bluetoothctl", "--timeout", "30", "scan", "on"]
+    // Scanning runs in the persistent session so discovery stays alive
+    // across a pair. scanning mirrors the session state for the UI.
+    property bool scanning: false
+
+    function toggleScan() {
+        scanning = !scanning;
+        btSession.send(scanning ? "scan on" : "scan off");
+        if (scanning) scanStop.restart(); else scanStop.stop();
+    }
+
+    Timer {
+        id: scanStop
+        interval: 30000
+        onTriggered: { btPill.scanning = false; btSession.send("scan off"); }
     }
 
     PanelWindow {
@@ -377,7 +391,7 @@ Pill {
 
         onVisibleChanged: {
             if (visible) trustProbe.refresh();
-            else { scanProcess.running = false; btPill.pendingForget = ""; }
+            else { if (btPill.scanning) btPill.toggleScan(); btPill.pendingForget = ""; }
         }
 
         // Click anywhere outside the card closes the panel.
@@ -488,21 +502,21 @@ Pill {
                     width: parent.width
                     height: 30
                     radius: 9
-                    color: scanProcess.running ? Qt.alpha(Colors.accent, 0.18) : Colors.surface1
+                    color: btPill.scanning ? Qt.alpha(Colors.accent, 0.18) : Colors.surface1
                     border.width: 1
-                    border.color: scanProcess.running ? Qt.alpha(Colors.accent, 0.5) : "transparent"
+                    border.color: btPill.scanning ? Qt.alpha(Colors.accent, 0.5) : "transparent"
                     Behavior on color { ColorAnimation { duration: 150 } }
 
                     Text {
                         anchors.centerIn: parent
-                        text: scanProcess.running ? "Scanning… (click to stop)" : "Scan for devices"
+                        text: btPill.scanning ? "Scanning… (click to stop)" : "Scan for devices"
                         font.family: "JetBrainsMono Nerd Font"
                         font.pixelSize: 11
-                        color: scanProcess.running ? Colors.accent : Colors.textMain
+                        color: btPill.scanning ? Colors.accent : Colors.textMain
                     }
 
                     SequentialAnimation on opacity {
-                        running: scanProcess.running
+                        running: btPill.scanning
                         loops: Animation.Infinite
                         alwaysRunToEnd: true
                         NumberAnimation { to: 0.55; duration: 700; easing.type: Easing.InOutSine }
@@ -511,7 +525,7 @@ Pill {
 
                     MouseArea {
                         anchors.fill: parent
-                        onClicked: scanProcess.running = !scanProcess.running
+                        onClicked: btPill.toggleScan()
                     }
                 }
 
