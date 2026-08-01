@@ -93,6 +93,16 @@ Pill {
         trustSettle.restart();
     }
 
+    // Connect / disconnect through the same session, so the link is not
+    // torn down by a helper process exiting mid-operation.
+    function deviceSetConnected(d, want) {
+        const addr = d.address;
+        if (!/^[0-9A-Fa-f:]+$/.test(addr)) return;
+        lastMessage = want ? "connecting…" : "disconnecting…";
+        btSession.send((want ? "connect " : "disconnect ") + addr);
+        trustSettle.restart();
+    }
+
     // Trust is what lets the DEVICE start the connection: an untrusted
     // device can only be connected while it is in pairing mode, which is
     // why headphones seemed to need re-pairing after every reboot.
