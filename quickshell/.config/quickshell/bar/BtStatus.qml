@@ -54,9 +54,17 @@ Pill {
             " && bluetoothctl -- trust " + addr +
             " && bluetoothctl -- connect " + addr]);
     }
+    // Address awaiting a confirmed forget. Removing a pairing is
+    // destructive and used to fire on a single right click, which is far
+    // too easy to hit by accident next to a list you click constantly.
+    property string pendingForget: ""
+
     function deviceForget(d) {
+        const addr = d.address;
+        if (pendingForget !== addr) { pendingForget = addr; return; }
+        pendingForget = "";
         try { d.forget(); }
-        catch (e) { btctl.run(["bluetoothctl", "remove", d.address]); }
+        catch (e) { btctl.run(["bluetoothctl", "remove", addr]); }
     }
 
     // Trust is what lets the DEVICE start the connection: an untrusted
@@ -123,6 +131,17 @@ Pill {
         onTriggered: trustProbe.refresh()
     }
 
+    // Toggling the adapter tears down and rebuilds BlueZ's device
+    // objects; give it a moment, then re-read so paired devices
+    // reappear in the list instead of looking forgotten.
+    onBtEnabledChanged: if (btEnabled) adapterSettle.restart()
+
+    Timer {
+        id: adapterSettle
+        interval: 1500
+        onTriggered: trustProbe.refresh()
+    }
+
     Process {
         id: btctl
         function run(cmd) { running = false; command = cmd; running = true; }
@@ -170,12 +189,16 @@ Pill {
                 text: {
                     const d = deviceRow.modelData;
                     if (d.pairing || d.address === btPill.pairingAddress) return "pairing…";
+                    if (d.address === btPill.pendingForget)
+                        return "right click again to FORGET this pairing";
                     if (d.connected) {
                         const batt = d.batteryAvailable
                             ? "  ·  " + Math.round(d.battery * 100) + "%" : "";
                         const tr = btPill.isTrusted(d) ? "" : "  ·  NOT trusted";
                         return "connected" + batt + tr;
                     }
+                    if (d.address === btPill.pendingForget)
+                        return "right click again to FORGET this pairing";
                     if (d.paired)
                         return btPill.isTrusted(d) ? "disconnected  ·  trusted"
                                                    : "disconnected  ·  NOT trusted";
@@ -183,7 +206,8 @@ Pill {
                 }
                 font.family: "JetBrainsMono Nerd Font"
                 font.pixelSize: 10
-                color: deviceRow.modelData.paired && !btPill.isTrusted(deviceRow.modelData)
+                color: deviceRow.modelData.address === btPill.pendingForget ? Colors.danger
+                     : deviceRow.modelData.paired && !btPill.isTrusted(deviceRow.modelData)
                      ? Colors.warn
                      : deviceRow.modelData.connected ? Colors.accent : Colors.textFaint
             }
@@ -255,6 +279,8 @@ Pill {
                     if (d.paired) btPill.deviceForget(d);
                     return;
                 }
+                // Any normal click cancels a pending forget.
+                if (btPill.pendingForget !== "") { btPill.pendingForget = ""; return; }
                 if (d.paired) btPill.deviceSetConnected(d, !d.connected);
                 else btPill.devicePair(d);
             }
@@ -286,7 +312,7 @@ Pill {
 
         onVisibleChanged: {
             if (visible) trustProbe.refresh();
-            else scanProcess.running = false;
+            else { scanProcess.running = false; btPill.pendingForget = ""; }
         }
 
         // Click anywhere outside the card closes the panel.
