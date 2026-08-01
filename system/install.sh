@@ -27,21 +27,30 @@ sudo install -Dm644 \
 sudo udevadm control --reload-rules
 sudo udevadm trigger --subsystem-match=power_supply
 
-echo ":: systemd unit (re-apply charge limit at boot and after resume)"
-sudo install -Dm644 \
-  "$here/etc/systemd/system/battery-charge-limit.service" \
-  /etc/systemd/system/battery-charge-limit.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now battery-charge-limit.service
-
-# The unit reads this; seed it if the user has never set a limit.
+# Seed the limit file BEFORE enabling the unit: the unit reads it on
+# start, and with `set -e` a failed start would abort this script before
+# the file ever got written.
 limit_file="$HOME/.config/battery-charge-limit"
 if [[ ! -f "$limit_file" ]]; then
+  mkdir -p "$(dirname "$limit_file")"
   echo 80 > "$limit_file"
   echo ":: seeded $limit_file with 80 (change it from the bar's battery panel)"
 fi
+
+echo ":: systemd unit (re-apply charge limit at boot and after resume)"
+# The unit runs as root at boot, so it cannot resolve $HOME itself --
+# bake this user's real path in as the file is copied. Using | as the
+# sed delimiter keeps paths containing / from breaking the expression.
+sed "s|__LIMIT_FILE__|$limit_file|" \
+  "$here/etc/systemd/system/battery-charge-limit.service" \
+  | sudo install -Dm644 /dev/stdin /etc/systemd/system/battery-charge-limit.service
+sudo systemctl daemon-reload
+# Machines with no battery threshold make this a no-op; don't abort.
+sudo systemctl enable --now battery-charge-limit.service || \
+  echo ":: unit did not start cleanly -- check: systemctl status battery-charge-limit.service"
 
 echo
 echo "done. verify with:"
 echo "  stat -c '%U %G %a' /sys/class/power_supply/BAT*/charge_control_end_threshold"
 echo "  systemctl status battery-charge-limit.service"
+echo "  grep LIMIT_FILE /etc/systemd/system/battery-charge-limit.service"

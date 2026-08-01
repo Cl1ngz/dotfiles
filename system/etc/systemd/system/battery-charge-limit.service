@@ -8,17 +8,24 @@ After=multi-user.target suspend.target hibernate.target hybrid-sleep.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-# Reads the limit from the file below and writes it to whichever
-# threshold attribute this machine exposes. The panel writes that same
-# file, so changing the limit needs no root -- only applying it at boot
-# does, which is this unit's whole job. Falls back to 100 if the file
-# is missing, unreadable, or not a sane number.
+# Reads the limit from the file below (path filled in at install time)
+# and writes it to whichever threshold attribute this machine exposes.
+# The panel writes that same file, so changing the limit needs no root
+# -- only applying it at boot does, which is this unit's whole job.
+# Falls back to 100 if the file is missing, unreadable, or not sane.
 #
 # Note: echo, not printf %s -- the value needs its trailing newline;
 # some drivers reject a write without one. Failures exit non-zero so
 # systemctl status shows a genuine failure instead of silent success.
-Environment=LIMIT_FILE=/home/cl1ngz/.config/battery-charge-limit
-ExecStart=/bin/sh -c 'LIMIT=$(tr -cd 0-9 < "$LIMIT_FILE" 2>/dev/null); \
+#
+# A machine with no battery (or no threshold attribute) exits 0: the
+# same dotfiles are installed on desktops, where there is simply
+# nothing to apply.
+# __LIMIT_FILE__ is substituted by system/install.sh with the invoking
+# user's real path. The unit runs as root before any session exists,
+# so it cannot work this out for itself at runtime.
+Environment=LIMIT_FILE=__LIMIT_FILE__
+ExecStart=/bin/sh -c 'LIMIT=$([ -r "$LIMIT_FILE" ] && tr -cd 0-9 < "$LIMIT_FILE" || echo 100); \
 case "$LIMIT" in ""|*[!0-9]*) LIMIT=100 ;; esac; \
 [ "$LIMIT" -ge 20 ] && [ "$LIMIT" -le 100 ] || LIMIT=100; \
 for f in /sys/class/power_supply/BAT*/charge_control_end_threshold \
@@ -26,7 +33,7 @@ for f in /sys/class/power_supply/BAT*/charge_control_end_threshold \
   [ -f "$f" ] || continue; \
   if echo "$LIMIT" > "$f"; then echo "set $f to $LIMIT"; exit 0; fi; \
   echo "failed to write $LIMIT to $f" >&2; exit 1; \
-done; echo "no charge threshold attribute found" >&2; exit 1'
+done; echo "no charge threshold attribute on this machine; nothing to do"; exit 0'
 
 [Install]
 WantedBy=multi-user.target suspend.target hibernate.target hybrid-sleep.target
