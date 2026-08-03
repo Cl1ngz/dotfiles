@@ -1,5 +1,9 @@
 [config]
 
+[templates.quickshell]
+input_path = '~/.config/matugen/templates/quickshell-colors.qml'
+output_path = '~/.config/quickshell/Colors.qml'
+
 [templates.waybar]
 input_path = '~/.config/matugen/templates/waybar-colors.css'
 output_path = '~/.config/waybar/colors.css'
@@ -26,10 +30,10 @@ output_path = '~/.config/hypr/hyprlock-colors.conf'
 # output_path = '~/.config/dunst/dunstrc'
 # post_hook = "killall dunst && dunst &"
 
-[templates.mako]
-input_path = '~/.config/matugen/templates/mako-config'
-output_path = '~/.config/mako/config'
-post_hook = 'makoctl reload'
+# [templates.mako]
+# input_path = '~/.config/matugen/templates/mako-config'
+# output_path = '~/.config/mako/config'
+# post_hook = 'makoctl reload'
 
 [templates.yazi]
 input_path = '~/.config/matugen/templates/yazi-theme.toml'
@@ -64,6 +68,3 @@ output_path = '~/Documents/Notes/School_Valut/.obsidian/snippets/obsidian-theme.
 input_path = '~/.config/matugen/templates/discord-theme.css'
 output_path = '~/.config/vesktop/themes/discord-theme.css'
 
-[templates.quickshell]
-input_path = '~/.config/matugen/templates/quickshell-colors.qml'
-output_path = '~/.config/quickshell/Colors.qml'
