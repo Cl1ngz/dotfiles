@@ -23,7 +23,7 @@ mako/.config/mako/config
 **/current-theme.conf
 # Ignore active wallpaper symlink
 **/current_wall
-**/hyprlock-colors.conf
+**/hypr/hyprlock-colors.conf
 **/Colors.qml
 lazy-lock.json
 
