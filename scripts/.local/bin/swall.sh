@@ -20,24 +20,23 @@ matugen image "$1" --mode dark --source-color-index 0
 # 4. Refresh the stubborn apps (silently, in background)
 # ';' not '&&': if the daemon wasn't running, -q fails and '&&' would
 # have skipped the restart.
-thunar -q 2>/dev/null
-thunar --daemon &
+thunar -q 2>/dev/null; thunar --daemon &
 
-# IF i ever need to come back to this
-# Kill existing applets/bar
-# killall waybar 2>/dev/null
-
-# Restart and detach from terminal
-# waybar >/dev/null 2>&1 &
-
-# 5. The quickshell bar recolors itself: it watches its config files
-# and hot-reloads when matugen rewrites Colors.qml. No restart needed.
+# 5. Tell quickshell to reload, explicitly.
 #
-# If your quickshell build turns out not to live-reload, uncomment this
-# fallback. It restarts ONLY the bar (matching on bar.qml), never the
-# clipboard/powermenu/wallpaper panels:
-# pkill -f 'quickshell -p .*bar.qml' 2>/dev/null
-# quickshell -p "$HOME/.config/quickshell/bar.qml" >/dev/null 2>&1 &
+# It does watch its config dir, but a generated Colors.qml can be seen
+# mid-write: the reload then fails and the old colours stay. An IPC call
+# after matugen has finished is deterministic. The handler lives in
+# bar.qml (target "theme").
+#
+# `qs` and `quickshell` are the same binary; try whichever exists.
+QS_DIR="$HOME/.config/quickshell"
+QS_BIN=$(command -v qs || command -v quickshell)
+if [ -n "$QS_BIN" ]; then
+  sleep 0.3
+  "$QS_BIN" -p "$QS_DIR/bar.qml" ipc call theme reload >/dev/null 2>&1 \
+    || touch "$QS_DIR/bar.qml"   # fall back to nudging the file watcher
+fi
 
 # 6. Reload Hyprland (picks up the regenerated colors.lua)
 hyprctl reload
