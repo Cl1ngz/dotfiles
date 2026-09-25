@@ -73,7 +73,7 @@ end
 --- Gaming
 hl.window_rule({
 	match = { class = "^(steam|steam_app_.*|gamescope|lutris|heroic)$" },
-	workspace = "special:gaming",
+	workspace = "name:gaming",
 })
 
 -- Rofi Tweaks
