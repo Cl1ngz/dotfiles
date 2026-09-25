@@ -68,6 +68,7 @@ hl.bind(mainMod .. " + ALT + down", hl.dsp.focus({ workspace = "e-1" }))
 
 -- special workspaces
 hl.bind(mainMod .. " + ALT + g", hl.dsp.focus({ workspace = "name:gaming" }))
+hl.bind(mainMod .. " + ALT + l", hl.dsp.focus({ workspace = "name:launchers" }))
 
 -- █▄ ▄█ ▄▀▄ █ █ ▄▀▀ ██▀   ██▄ █ █▄ █ █▀▄
 -- █ ▀ █ ▀▄▀ ▀▄█ ▄██ █▄▄   █▄█ █ █ ▀█ █▄▀

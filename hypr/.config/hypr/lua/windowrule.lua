@@ -70,9 +70,15 @@ end
 -- Specific Rules  --
 ---------------------
 
---- Gaming
+-- gmaeLaunchers (Steam client, Lutris, Heroic)
 hl.window_rule({
-	match = { class = "^(steam|steam_app_.*|gamescope|lutris|heroic)$" },
+	match = { class = "^(steam|lutris|heroic)$" },
+	workspace = "name:launchers",
+})
+
+-- Games
+hl.window_rule({
+	match = { class = "^(steam_app_.*|gamescope)$" },
 	workspace = "name:gaming",
 })
 
