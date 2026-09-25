@@ -66,6 +66,9 @@ end
 hl.bind(mainMod .. " + ALT + up", hl.dsp.focus({ workspace = "e+1" }))
 hl.bind(mainMod .. " + ALT + down", hl.dsp.focus({ workspace = "e-1" }))
 
+-- special workspaces
+hl.bind(mainMod .. " + ALT + g", hl.dsp.focus({ workspace = "name:gaming" }))
+
 -- █▄ ▄█ ▄▀▄ █ █ ▄▀▀ ██▀   ██▄ █ █▄ █ █▀▄
 -- █ ▀ █ ▀▄▀ ▀▄█ ▄██ █▄▄   █▄█ █ █ ▀█ █▄▀
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })

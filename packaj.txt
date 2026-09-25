@@ -46,3 +46,5 @@ gst-plugins-bad
 gst-plugins-ugly
 gst-libav
 syncthing
+fuse2
+hyprsunset

@@ -50,10 +50,10 @@ local workspaces = {
 	[3] = { "thunar" },
 	[4] = { "dev.zed.Zed", "jetbrains-idea" },
 	[5] = { "vesktop", "calibre-gui" },
-	[6] = { "obsidian", "md.Obsidian", "localsend" },
+	[6] = { "obsidian", "md.Obsidian", "md.obsidian.Obsidian", "localsend" },
 	[7] = { "virt-manager" },
 	[8] = { "thunderbird", "org.qbittorrent.qBittorrent" },
-	[9] = { "superProductivity" },
+	[9] = {},
 	[10] = { "KeePassXC", "org.keepassxc.KeePassXC" },
 }
 
@@ -69,6 +69,12 @@ end
 ---------------------
 -- Specific Rules  --
 ---------------------
+
+--- Gaming
+hl.window_rule({
+	match = { class = "^(steam|steam_app_.*|gamescope|lutris|heroic)$" },
+	workspace = "special:gaming",
+})
 
 -- Rofi Tweaks
 hl.window_rule({
