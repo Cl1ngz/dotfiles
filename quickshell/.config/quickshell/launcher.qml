@@ -28,18 +28,58 @@ PanelWindow {
 
     color: "transparent"
 
+    // ---- display names -----------------------------------------------
+
+    // The row title is the .desktop FILE name, not the Name= field.
+    // Name= is whatever upstream wrote there, so gimp.desktop reads
+    // "GNU Image Manipulation Program" -- the filename is the name the
+    // app is actually known by, uniformly, with no per-app rules.
+    //
+    // Reverse-DNS ids (flatpak, org.gimp.GIMP) are shown by their last
+    // segment only: the org./com. prefix is packaging bookkeeping, and
+    // dropping it is the same rule applied to the same kind of string,
+    // not a special case.
+    function shortName(entry) {
+        const id = (entry.id ?? "").replace(/\.desktop$/, "");
+        if (id === "") return entry.name ?? "";
+        const slug = id.split(".").pop();
+        return slug === "" ? id : slug;
+    }
+
+    // Second line: Name= (what the title used to be) plus the
+    // description, so the title being a filename costs no information.
+    function subName(entry) {
+        const full = entry.name ?? "";
+        const desc = entry.comment ?? entry.genericName ?? "";
+        if (full === "") return desc;
+        if (desc === "" || full.toLowerCase() === desc.toLowerCase()) return full;
+        return full + "  ·  " + desc;
+    }
+
     // ---- search / filtering ------------------------------------------
 
-    // Rank: name prefix beats name word-start beats name substring beats
-    // description match. -1 filters out.
+    // Rank: title prefix, then title word-start, then substring in
+    // either the title or Name=, then Keywords=, then description.
+    // Name= stays searchable even though it is no longer the title, so
+    // "gimp" and "manipulation" both land on the same row. -1 filters
+    // out. Word boundaries in a filename are - and _, not spaces.
     function scoreEntry(entry, q) {
-        const name = entry.name.toLowerCase();
         if (q === "") return 10;
-        if (name.startsWith(q)) return 0;
-        if (name.includes(" " + q)) return 1;
-        if (name.includes(q)) return 2;
+
+        const title = shortName(entry).toLowerCase();
+        const full = (entry.name ?? "").toLowerCase();
+
+        if (title.startsWith(q)) return 0;
+        if (full.startsWith(q)) return 1;
+        if (title.includes("-" + q) || title.includes("_" + q)
+            || full.includes(" " + q)) return 2;
+        if (title.includes(q) || full.includes(q)) return 3;
+
+        const kw = (entry.keywords ?? []).join(" ").toLowerCase();
+        if (kw.includes(q)) return 4;
+
         const desc = (entry.comment ?? entry.genericName ?? "").toLowerCase();
-        if (desc.includes(q)) return 3;
+        if (desc.includes(q)) return 5;
         return -1;
     }
 
@@ -49,7 +89,9 @@ PanelWindow {
             .filter((e) => !e.noDisplay)
             .map((e) => ({ entry: e, score: scoreEntry(e, q) }))
             .filter((r) => r.score >= 0)
-            .sort((a, b) => a.score - b.score || a.entry.name.localeCompare(b.entry.name))
+            .sort((a, b) => a.score - b.score
+                || launcherWindow.shortName(a.entry)
+                       .localeCompare(launcherWindow.shortName(b.entry)))
             .map((r) => r.entry);
     }
 
@@ -264,7 +306,7 @@ PanelWindow {
 
                             Text {
                                 width: parent.width
-                                text: row.modelData.name
+                                text: launcherWindow.shortName(row.modelData)
                                 elide: Text.ElideRight
                                 font.family: "JetBrainsMono Nerd Font"
                                 font.pixelSize: 13
@@ -274,7 +316,7 @@ PanelWindow {
                             Text {
                                 width: parent.width
                                 visible: text !== ""
-                                text: row.modelData.comment ?? row.modelData.genericName ?? ""
+                                text: launcherWindow.subName(row.modelData)
                                 elide: Text.ElideRight
                                 font.family: "JetBrainsMono Nerd Font"
                                 font.pixelSize: 10

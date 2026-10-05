@@ -25,6 +25,27 @@ Pill {
     property string expandedSsid: ""
     property string busyText: ""
 
+    // Last nmcli failure, verbatim. Every action went through a Process
+    // with no stdout/stderr attached, so a refused connection produced
+    // exactly nothing on screen -- the pill just stopped saying
+    // "connecting". nmcli's own message is the useful diagnostic
+    // ("Secrets were required but not provided", "Not authorized to
+    // control networking"), so it is shown as-is rather than replaced
+    // with a generic failure line.
+    property string errText: ""
+    // Set when the error looks like a missing polkit agent, which no
+    // amount of retrying fixes.
+    property bool errIsAuth: false
+
+    // Password reveal, shared by the network list and the editor's
+    // SECURITY tab.
+    property string revealSsid: ""
+    property string revealPsk: ""
+    property string revealNote: ""
+    property bool revealCanRoot: false
+    // Raw facts from the last reveal attempt, for the copy button.
+    property string revealDiag: ""
+
     // editor state
     property string editName: ""
     property string editType: ""       // wifi | ethernet | other
@@ -32,8 +53,13 @@ Pill {
     property int editTab: 0
     property var origValues: ({})
     property var editValues: ({})
-    property string pskShown: ""
-    property string newPsk: ""
+    // The connection's current secret, and the box showing it. They
+    // start equal; a save happens only if the box has been changed.
+    property string curSecret: ""
+    property string pwField: ""
+    property bool pwShow: false
+    property string secretNote: ""
+    property string secretKey: ""   // e.g. 802-1x.password
 
     readonly property var activeDevs: devices.filter(
         (d) => d.state === "connected" && (d.type === "wifi" || d.type === "ethernet"))
@@ -74,7 +100,38 @@ Pill {
             { key: "802-11-wireless.mtu", label: "mtu", type: "text", hint: "auto" },
             { key: "802-11-wireless.hidden", label: "hidden net", type: "bool" }
         ]},
-        { name: "SECURITY", wifiOnly: true, fields: [] },
+        // Two different connections wear this tab. A home network has a
+        // PSK and nothing else; an 802.1X network (eduroam, corporate)
+        // has no PSK at all and instead needs an identity, an EAP
+        // method and an inner auth. Showing a "NEW PSK" box for the
+        // second kind is just a field that cannot do anything.
+        // eapOnly/pskOnly pick which rows apply, from key-mgmt.
+        { name: "SECURITY", wifiOnly: true, fields: [
+            { key: "802-1x.eap", label: "eap method", type: "choice", eapOnly: true,
+              options: ["peap", "ttls", "tls", "pwd", "leap"] },
+            { key: "802-1x.identity", label: "identity", type: "text", eapOnly: true,
+              hint: "user@uni.edu.pl" },
+            { key: "802-1x.anonymous-identity", label: "anon identity", type: "text",
+              eapOnly: true, hint: "optional outer identity" },
+            { key: "802-1x.phase2-auth", label: "inner auth", type: "choice", eapOnly: true,
+              options: ["mschapv2", "pap", "gtc", "md5", "chap"] },
+            { key: "802-1x.ca-cert", label: "ca cert", type: "text", eapOnly: true,
+              hint: "path to the CA .pem" },
+            { key: "802-1x.domain-suffix-match", label: "domain match", type: "text",
+              eapOnly: true, hint: "RADIUS server domain" },
+            // nmcli reports and accepts pmf as a number, so the options
+            // are numbers and the labels are for reading.
+            { key: "802-11-wireless-security.pmf", label: "pmf", type: "choice",
+              options: ["0", "1", "2", "3"],
+              valueLabels: ({ "": "(default)", "0": "default", "1": "disable",
+                              "2": "optional", "3": "required" }) },
+            // Loaded and saved like any other key, but drawn by the
+            // button in the SECURITY body rather than a generic row.
+            { key: "802-1x.password-flags", label: "pw flags", type: "text",
+              eapOnly: true, hidden: true },
+            { key: "802-11-wireless-security.psk-flags", label: "psk flags",
+              type: "text", pskOnly: true, hidden: true }
+        ]},
         { name: "IPV4", fields: [
             { key: "ipv4.method", label: "method", type: "choice", options: ["auto", "manual", "link-local", "shared"] },
             { key: "ipv4.addresses", label: "addresses", type: "text", hint: "192.168.1.50/24" },
@@ -97,13 +154,33 @@ Pill {
         return ks;
     }
 
+    // key-mgmt of the open connection: wpa-psk, sae (WPA3), wpa-eap,
+    // owe, none. Drives which SECURITY rows are shown.
+    property string editKeyMgmt: ""
+    readonly property bool editIsEap:
+        editKeyMgmt === "wpa-eap" || editKeyMgmt === "wpa-eap-suite-b-192"
+
+    function visibleFields(tab) {
+        const fs = (tab ?? ({ fields: [] })).fields ?? [];
+        return fs.filter((f) => f.hidden !== true
+                             && (f.eapOnly !== true || editIsEap)
+                             && (f.pskOnly !== true || !editIsEap));
+    }
+
     function openEditor(name) {
         editName = name;
         editTab = 0;
         origValues = ({});
         editValues = ({});
-        pskShown = "";
-        newPsk = "";
+        editKeyMgmt = "";
+        curSecret = "";
+        pwField = "";
+        pwShow = false;
+        secretNote = "";
+        secretKey = "";
+        revealPsk = "";
+        revealNote = "";
+        revealCanRoot = false;
         editLoad.load(name);
     }
 
@@ -119,8 +196,12 @@ Pill {
             if (editValues[k] !== undefined && editValues[k] !== origValues[k])
                 args.push(k, editValues[k]);
         }
-        if (newPsk !== "")
-            args.push("802-11-wireless-security.psk", newPsk);
+        // The password box holds the CURRENT secret, so it is written
+        // only when it differs from what was loaded. secretKey is
+        // whichever setting this connection actually uses:
+        // 802-1x.password for enterprise, ...security.psk otherwise.
+        if (pwField !== curSecret && secretKey !== "")
+            args.push(secretKey, pwField);
         if (args.length === 4) { editName = ""; return; }   // nothing changed
         editSave.wasActive = editWasActive;
         editSave.conName = editName;
@@ -242,18 +323,286 @@ Pill {
 
     Process {
         id: netAction
+        // nmcli writes failures to stderr and progress to stdout; keep
+        // both, because `con up` reports "Error: Connection activation
+        // failed" on stderr while `dev wifi connect` sometimes explains
+        // itself on stdout.
+        property string outBuf: ""
+        property string errBuf: ""
+
         function run(cmd, label) {
             running = false;
             netPill.busyText = label;
+            netPill.errText = "";
+            netPill.errIsAuth = false;
+            outBuf = "";
+            errBuf = "";
             command = cmd;
             running = true;
         }
         function runSh(script, args, label) {
             run(["sh", "-c", script, "--"].concat(args), label);
         }
-        onExited: {
+
+        stdout: StdioCollector { onStreamFinished: netAction.outBuf = text }
+        stderr: StdioCollector { onStreamFinished: netAction.errBuf = text }
+
+        onExited: (code) => {
             netPill.busyText = "";
+            if (code !== 0) {
+                // Last non-empty line: nmcli prefixes with "Error: " and
+                // may precede it with progress chatter.
+                const lines = (errBuf + "\n" + outBuf).split("\n")
+                    .map((l) => l.trim()).filter((l) => l !== "");
+                const msg = lines.length > 0
+                    ? lines[lines.length - 1]
+                    : "nmcli exited " + code + " with no message";
+                netPill.errText = msg.replace(/^Error:\s*/, "");
+                const low = msg.toLowerCase();
+                netPill.errIsAuth = low.indexOf("not authorized") !== -1
+                    || low.indexOf("insufficient privileges") !== -1
+                    || low.indexOf("access denied") !== -1;
+            }
             refreshProcess.refresh();
+        }
+    }
+
+    // Reveal the saved key for one network.
+    //
+    // `nmcli -s -g 802-11-wireless-security.psk` is the documented way,
+    // but it lies by omission in three separate situations, all of which
+    // look identical from QML -- an empty string:
+    //
+    //   1. Reading secrets goes through polkit. With no agent answering,
+    //      NetworkManager returns the field EMPTY rather than failing,
+    //      so nmcli exits 0 with no output.
+    //   2. psk-flags=1 (agent-owned) means the key is in the login
+    //      keyring, not in the connection profile. NetworkManager never
+    //      had it to give.
+    //   3. The profile name is not always the SSID ("MyWifi 1", or a
+    //      profile renamed by hand), so `con show <ssid>` was simply
+    //      asking about a connection that does not exist.
+    //
+    // So this resolves the real profile name first, then tries nmcli,
+    // then the keyfile directly, and finally reports psk-flags and
+    // key-mgmt so the panel can say WHICH of the three it hit instead of
+    // claiming there is no key.
+    Process {
+        id: revealLoad
+        property string resolved: ""
+        property string keyfile: ""
+
+        function load(name) {
+            running = false;
+            netPill.revealSsid = name;
+            netPill.revealPsk = "…";
+            netPill.revealNote = "";
+            netPill.revealCanRoot = false;
+            resolved = "";
+            keyfile = "";
+            command = ["sh", "-c",
+                'name="$1"; ' +
+                // Profile named exactly after the SSID: the usual case.
+                'if nmcli -g connection.id con show "$name" >/dev/null 2>&1; then ' +
+                '  target="$name"; ' +
+                'else ' +
+                // Otherwise find the wifi profile whose ssid matches.
+                '  target=$(nmcli -t -f NAME con show | sed "s/\\\\\\\\:/:/g" | ' +
+                '    while IFS= read -r n; do ' +
+                '      s=$(nmcli -g 802-11-wireless.ssid con show "$n" 2>/dev/null); ' +
+                '      if [ "$s" = "$name" ]; then printf %s "$n"; break; fi; ' +
+                '    done); ' +
+                'fi; ' +
+                'if [ -z "$target" ]; then echo "NOPROFILE"; exit 0; fi; ' +
+                'printf "NAME:%s\\n" "$target"; ' +
+                // stderr goes to a temp file instead of /dev/null: when
+                // the secret comes back empty, nmcli's own complaint is
+                // the only thing that says why, and discarding it was
+                // the reason the note could only guess.
+                'tmp=$(mktemp 2>/dev/null || echo /tmp/.qs-net-psk.$$); ' +
+                'psk=$(nmcli -s -g 802-11-wireless-security.psk con show "$target" 2>"$tmp"); ' +
+                'rc=$?; ' +
+                'err=$(tr "\\n" " " < "$tmp"); rm -f "$tmp"; ' +
+                'printf "RC:%s\\n" "$rc"; ' +
+                'if [ -n "$err" ]; then printf "ERR:%s\\n" "$err"; fi; ' +
+                'if [ -n "$psk" ]; then printf "PSK:%s\\n" "$psk"; exit 0; fi; ' +
+                // The login keyring, where anything created by a GUI
+                // tool keeps its secret (psk-flags=1). This is the step
+                // that makes the panel match nm-connection-editor.
+                'uuid=$(nmcli -g connection.uuid con show "$target" 2>/dev/null); ' +
+                'if command -v secret-tool >/dev/null 2>&1 && [ -n "$uuid" ]; then ' +
+                '  k=$(secret-tool lookup xdg:schema ' +
+                '        org.freedesktop.NetworkManager.Connection ' +
+                '        connection-uuid "$uuid" ' +
+                '        setting-name 802-11-wireless-security ' +
+                '        setting-key psk 2>/dev/null); ' +
+                '  if [ -n "$k" ]; then printf "PSK:%s\\n" "$k"; exit 0; fi; ' +
+                '  printf "KEYRING:miss\\n"; ' +
+                'else printf "KEYRING:no-secret-tool\\n"; fi; ' +
+                // Keyfile read: works without polkit if the file happens
+                // to be group-readable, which some setups do.
+                'kf="/etc/NetworkManager/system-connections/$target.nmconnection"; ' +
+                'printf "KEYFILE:%s\\n" "$kf"; ' +
+                'if [ -r "$kf" ]; then ' +
+                '  psk=$(sed -n "s/^psk=//p" "$kf" | head -n1); ' +
+                '  if [ -n "$psk" ]; then printf "PSK:%s\\n" "$psk"; exit 0; fi; ' +
+                '  printf "KFREAD:yes-but-no-psk-line\\n"; ' +
+                'else printf "KFREAD:unreadable\\n"; fi; ' +
+                'printf "FLAGS:%s\\n" "$(nmcli -g 802-11-wireless-security.psk-flags con show "$target" 2>/dev/null)"; ' +
+                'printf "KEYMGMT:%s\\n" "$(nmcli -g 802-11-wireless-security.key-mgmt con show "$target" 2>/dev/null)"; ' +
+                // Whether NM thinks this caller may read secrets at all.
+                // With auth-polkit=false every row reads "yes".
+                'printf "PERM:%s\\n" "$(nmcli -t general permissions 2>/dev/null | ' +
+                '  grep -i "settings.modify.own\\|settings.modify.system" | tr "\\n" " ")"',
+                "--", name];
+            running = true;
+        }
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let psk = "";
+                let flags = "";
+                let keymgmt = "";
+                let errLine = "";
+                let perms = "";
+                let kfread = "";
+                let keyring = "";
+                let rc = "";
+                let noProfile = false;
+
+                for (const raw of text.split("\n")) {
+                    const line = raw.trim();
+                    if (line === "NOPROFILE") { noProfile = true; continue; }
+                    const ci = line.indexOf(":");
+                    if (ci === -1) continue;
+                    const tag = line.substring(0, ci);
+                    const val = line.substring(ci + 1);
+                    if (tag === "PSK") psk = val;
+                    else if (tag === "NAME") revealLoad.resolved = val;
+                    else if (tag === "KEYFILE") revealLoad.keyfile = val;
+                    else if (tag === "FLAGS") flags = val.trim();
+                    else if (tag === "KEYMGMT") keymgmt = val.trim();
+                    else if (tag === "ERR") errLine = val.trim();
+                    else if (tag === "PERM") perms = val.trim();
+                    else if (tag === "KFREAD") kfread = val.trim();
+                    else if (tag === "KEYRING") keyring = val.trim();
+                    else if (tag === "RC") rc = val.trim();
+                }
+
+                // Kept verbatim so the "copy diagnosis" button hands
+                // over something complete rather than my summary of it.
+                netPill.revealDiag = "profile=" + revealLoad.resolved
+                    + "\nrc=" + rc + " flags=" + flags + " key-mgmt=" + keymgmt
+                    + "\nkeyfile=" + kfread + " keyring=" + keyring
+                    + "\nstderr=" + (errLine === "" ? "(none)" : errLine)
+                    + "\nperms=" + (perms === "" ? "(none)" : perms);
+
+                if (psk !== "") {
+                    netPill.revealPsk = psk;
+                    netPill.revealNote = "";
+                    return;
+                }
+                if (noProfile) {
+                    netPill.revealPsk = "—";
+                    netPill.revealNote = "No saved profile for this network.";
+                    return;
+                }
+
+                netPill.revealPsk = "—";
+                if (keymgmt === "wpa-eap" || keymgmt === "wpa-eap-suite-b-192") {
+                    netPill.revealNote = "Enterprise (802.1X): there is no PSK, "
+                        + "the credentials are per-user.";
+                } else if (keyring === "no-secret-tool") {
+                    netPill.revealNote = "The key is agent-owned (in your login "
+                        + "keyring, not in NetworkManager). Install libsecret so "
+                        + "the keyring can be read: pacman -S libsecret";
+                } else if (flags === "1") {
+                    netPill.revealNote = "psk-flags=1 (agent-owned), and the login "
+                        + "keyring has no entry for it — it may be locked, or "
+                        + "held by a different keyring daemon than the one this "
+                        + "session can reach.";
+                } else if (flags === "2") {
+                    netPill.revealNote = "psk-flags=2 (not-saved): NetworkManager "
+                        + "asks for this key every time, so nothing is stored.";
+                } else if (flags === "4") {
+                    netPill.revealNote = "psk-flags=4 (not-required): open network.";
+                } else if (errLine !== "") {
+                    // nmcli actually said something. Show it rather
+                    // than assuming which case this is.
+                    netPill.revealNote = "nmcli: " + errLine;
+                    netPill.revealCanRoot = revealLoad.keyfile !== "";
+                } else if (perms.indexOf("auth") !== -1) {
+                    // "...modify.system:auth" means polkit is still in
+                    // the loop and would have to prompt.
+                    netPill.revealNote = "NetworkManager still wants polkit "
+                        + "authorization (permissions say \"auth\", not \"yes\").\n"
+                        + "Add /etc/NetworkManager/conf.d/99-no-polkit.conf with "
+                        + "[main] auth-polkit=false, then:\n"
+                        + "  sudo systemctl reload NetworkManager";
+                    netPill.revealCanRoot = revealLoad.keyfile !== "";
+                } else {
+                    // Permissions say yes, nmcli said nothing, flags
+                    // say the key should be in the profile -- and it
+                    // still came back empty. Out of theories: hand over
+                    // the raw facts instead of inventing a reason.
+                    netPill.revealNote = "nmcli returned an empty key with no error "
+                        + "and no polkit refusal. Raw result:\n"
+                        + netPill.revealDiag;
+                    netPill.revealCanRoot = revealLoad.keyfile !== "";
+                }
+            }
+        }
+        stderr: StdioCollector {
+            onStreamFinished: {
+                if (text.trim() !== "" && netPill.revealPsk === "…")
+                    netPill.revealNote = text.trim();
+            }
+        }
+    }
+
+    // Last resort: read the keyfile as root with sudo -n.
+    //
+    // Deliberately NOT pkexec: pkexec IS polkit, and with no agent it
+    // queues an invisible prompt on whatever terminal launched the
+    // shell -- four unanswered ones is what tripped pam_faillock
+    // before. `sudo -n` never prompts: it either succeeds because a
+    // NOPASSWD rule or a live timestamp allows it, or it fails
+    // instantly with "a password is required".
+    Process {
+        id: revealRoot
+        function run() {
+            if (revealLoad.keyfile === "") return;
+            running = false;
+            netPill.revealPsk = "…";
+            command = ["sudo", "-n", "sed", "-n", "s/^psk=//p", revealLoad.keyfile];
+            running = true;
+        }
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const v = text.trim().split("\n")[0] ?? "";
+                if (v !== "") {
+                    netPill.revealPsk = v;
+                    netPill.revealNote = "";
+                    netPill.revealCanRoot = false;
+                }
+            }
+        }
+        stderr: StdioCollector {
+            onStreamFinished: {
+                if (text.trim() !== "" && netPill.revealPsk === "…") {
+                    netPill.revealPsk = "—";
+                    netPill.revealNote = "sudo: " + text.trim().split("\n")[0]
+                        + "\nsudo -n cannot prompt. Use the auth-polkit=false "
+                        + "drop-in instead, or read the file in a terminal.";
+                }
+            }
+        }
+        onExited: (code) => {
+            if (code !== 0 && netPill.revealPsk === "…") {
+                netPill.revealPsk = "—";
+                netPill.revealNote = "sudo -n exited " + code
+                    + " (no passwordless rule for this).";
+            }
         }
     }
 
@@ -279,6 +628,8 @@ Pill {
                         ctype = val === "802-11-wireless" ? "wifi"
                               : val === "802-3-ethernet" ? "ethernet" : val;
                     if (key === "GENERAL.STATE") active = val === "activated";
+                    if (key === "802-11-wireless-security.key-mgmt")
+                        netPill.editKeyMgmt = (val === "--" ? "" : val);
                     if (netPill.editKeys.indexOf(key) !== -1)
                         vals[key] = (val === "--" ? "" : val);
                 }
@@ -286,19 +637,91 @@ Pill {
                 netPill.editWasActive = active;
                 netPill.origValues = vals;
                 netPill.editValues = Object.assign({}, vals);
+                if (ctype === "wifi") secretLoad.load(netPill.editName);
             }
         }
     }
 
+    // Load the connection's stored secret the way nm-connection-editor
+    // does, which is why that dialog can tick "Show password" while
+    // `nmcli -s` returns nothing:
+    //
+    //   - A SYSTEM-owned secret (psk-flags=0) lives in the profile and
+    //     comes back from nmcli, given authorization.
+    //   - An AGENT-owned secret (psk-flags=1, the default for anything
+    //     created by a GUI) was never in the profile at all. It is in
+    //     the login keyring, and nm-connection-editor reads it from
+    //     there through libsecret -- no polkit involved, which is why
+    //     it works for you and the panel did not.
+    //
+    // secret-tool is that same keyring, from the shell. The schema NM
+    // stores under is org.freedesktop.NetworkManager.Connection, keyed
+    // by the connection UUID plus the setting name and key.
     Process {
-        id: pskLoad
+        id: secretLoad
         function load(name) {
             running = false;
-            command = ["nmcli", "-s", "-g", "802-11-wireless-security.psk", "con", "show", name];
+            netPill.curSecret = "";
+            netPill.pwField = "";
+            netPill.secretNote = "";
+            command = ["sh", "-c",
+                'name="$1"; ' +
+                'uuid=$(nmcli -g connection.uuid con show "$name" 2>/dev/null); ' +
+                'km=$(nmcli -g 802-11-wireless-security.key-mgmt con show "$name" 2>/dev/null); ' +
+                'case "$km" in ' +
+                '  wpa-eap*) sn=802-1x; sk=password ;; ' +
+                '  *) sn=802-11-wireless-security; sk=psk ;; ' +
+                'esac; ' +
+                'printf "SETTING:%s.%s\\n" "$sn" "$sk"; ' +
+                // 1. the profile itself
+                'v=$(nmcli -s -g "$sn.$sk" con show "$name" 2>/dev/null); ' +
+                'if [ -n "$v" ]; then printf "SRC:profile\\nVAL:%s\\n" "$v"; exit 0; fi; ' +
+                // 2. the login keyring, where GUI-made profiles put it
+                'if command -v secret-tool >/dev/null 2>&1 && [ -n "$uuid" ]; then ' +
+                '  v=$(secret-tool lookup xdg:schema ' +
+                '        org.freedesktop.NetworkManager.Connection ' +
+                '        connection-uuid "$uuid" setting-name "$sn" ' +
+                '        setting-key "$sk" 2>/dev/null); ' +
+                '  if [ -n "$v" ]; then printf "SRC:keyring\\nVAL:%s\\n" "$v"; exit 0; fi; ' +
+                '  printf "SRC:none\\n"; ' +
+                'else printf "SRC:nosecrettool\\n"; fi; ' +
+                'printf "FLAGS:%s\\n" "$(nmcli -g "$sn.$sk-flags" con show "$name" 2>/dev/null)"',
+                "--", name];
             running = true;
         }
         stdout: StdioCollector {
-            onStreamFinished: netPill.pskShown = text.trim() === "" ? "(none)" : text.trim()
+            onStreamFinished: {
+                let val = "";
+                let src = "";
+                let flags = "";
+                let setting = "";
+                for (const raw of text.split("\n")) {
+                    const line = raw.trim();
+                    const ci = line.indexOf(":");
+                    if (ci === -1) continue;
+                    const tag = line.substring(0, ci);
+                    const v = line.substring(ci + 1);
+                    if (tag === "VAL") val = v;
+                    else if (tag === "SRC") src = v.trim();
+                    else if (tag === "FLAGS") flags = v.trim();
+                    else if (tag === "SETTING") setting = v.trim();
+                }
+                netPill.secretKey = setting;
+                netPill.curSecret = val;
+                netPill.pwField = val;
+                if (val !== "") {
+                    netPill.secretNote = src === "keyring"
+                        ? "read from the login keyring" : "stored in the profile";
+                } else if (src === "nosecrettool") {
+                    netPill.secretNote = "not in the profile, and secret-tool is "
+                        + "not installed to read the keyring (pacman -S libsecret)";
+                } else if (flags === "2") {
+                    netPill.secretNote = "flags=2 (not-saved): nothing is stored "
+                        + "anywhere, it is asked for each time";
+                } else {
+                    netPill.secretNote = "not found in the profile or the keyring";
+                }
+            }
         }
     }
 
@@ -378,6 +801,7 @@ Pill {
         property string placeholder: ""
         signal submitted()
         signal edited()
+        function focusInput() { mi.forceActiveFocus(); }
         height: 26
         radius: 7
         color: Colors.mantle
@@ -406,6 +830,18 @@ Pill {
                 color: Colors.textFaint
             }
         }
+
+        // The panel is a layer-shell window with keyboardFocus OnDemand:
+        // the compositor hands it the keyboard on click, but the click
+        // has to land somewhere that takes QML focus first. Without
+        // this, typing in the password box did nothing at all. accepted
+        // = false lets the press through to the TextInput underneath so
+        // cursor placement and selection still work.
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.LeftButton
+            onPressed: (mouse) => { mi.forceActiveFocus(); mouse.accepted = false; }
+        }
     }
 
     // ---- panel -------------------------------------------------------
@@ -422,7 +858,16 @@ Pill {
 
         onVisibleChanged: {
             if (visible) refreshProcess.refresh();
-            else { netPill.expandedSsid = ""; netPill.editName = ""; }
+            else {
+                netPill.expandedSsid = "";
+                netPill.editName = "";
+                // Don't leave a plaintext key on screen for the next open.
+                netPill.revealSsid = "";
+                netPill.revealPsk = "";
+                netPill.revealNote = "";
+                netPill.revealCanRoot = false;
+                netPill.errText = "";
+            }
         }
 
         MouseArea { anchors.fill: parent; onClicked: overlay.visible = false }
@@ -534,7 +979,7 @@ Pill {
 
                     // field rows for the active tab
                     Repeater {
-                        model: (netPill.editTabs[netPill.editTab] ?? ({ fields: [] })).fields
+                        model: netPill.visibleFields(netPill.editTabs[netPill.editTab])
 
                         Item {
                             id: fieldRow
@@ -565,13 +1010,29 @@ Pill {
                             }
 
                             // choice (click cycles)
+                            //
+                            // Some settings read back as a number and
+                            // are written as a number too (pmf: 0..3),
+                            // so the raw value is useless as a label.
+                            // valueLabels, when the field has one, maps
+                            // the stored value to something readable
+                            // without changing what gets saved.
                             MiniButton {
                                 visible: fieldRow.modelData.type === "choice"
                                 anchors.right: parent.right
                                 anchors.verticalCenter: parent.verticalCenter
-                                label: fieldRow.fval === "" ? "(default)" : fieldRow.fval
+                                label: {
+                                    const vl = fieldRow.modelData.valueLabels;
+                                    if (vl !== undefined && vl[fieldRow.fval] !== undefined)
+                                        return vl[fieldRow.fval];
+                                    return fieldRow.fval === "" ? "(default)" : fieldRow.fval;
+                                }
                                 onClicked: {
                                     const opts = fieldRow.modelData.options;
+                                    // indexOf is -1 when NetworkManager
+                                    // reported a value outside the list;
+                                    // -1 + 1 = 0 starts the cycle at the
+                                    // first option, which is what we want.
                                     const idx = opts.indexOf(fieldRow.fval);
                                     netPill.setEditValue(fieldRow.modelData.key,
                                         opts[(idx + 1) % opts.length]);
@@ -597,27 +1058,98 @@ Pill {
                         width: parent.width
                         spacing: 8
 
+                        // The password box, loaded the way
+                        // nm-connection-editor loads it: the field holds
+                        // the CURRENT secret, "show password" reveals it,
+                        // and a save happens only if you change it.
+                        SectionLabel {
+                            text: netPill.editIsEap ? "802.1X PASSWORD" : "PSK"
+                        }
+
                         Row {
-                            spacing: 8
-                            MiniButton {
-                                label: "reveal current psk"
-                                onClicked: pskLoad.load(netPill.editName)
+                            width: parent.width
+                            spacing: 6
+
+                            MiniInput {
+                                id: pwBox
+                                width: parent.width - 120
+                                echoMode: netPill.pwShow ? TextInput.Normal
+                                                         : TextInput.Password
+                                placeholder: netPill.curSecret === ""
+                                    ? "not stored \u2014 type to set one" : "password"
+                                text: netPill.pwField
+                                onEdited: netPill.pwField = text
                             }
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: netPill.pskShown
-                                font.family: "JetBrainsMono Nerd Font"
-                                font.pixelSize: 11
-                                color: Colors.textMain
+                            MiniButton {
+                                anchors.verticalCenter: pwBox.verticalCenter
+                                label: (netPill.pwShow ? "\u25cf " : "\u25cb ") + "show"
+                                tint: netPill.pwShow ? Colors.accent : Colors.textFaint
+                                onClicked: netPill.pwShow = !netPill.pwShow
+                            }
+                            MiniButton {
+                                anchors.verticalCenter: pwBox.verticalCenter
+                                visible: netPill.pwField !== ""
+                                label: "copy"
+                                onClicked: Quickshell.execDetached(
+                                    ["sh", "-c", 'printf %s "$1" | wl-copy', "--",
+                                     netPill.pwField])
                             }
                         }
-                        SectionLabel { text: "NEW PSK (blank = keep current)" }
-                        MiniInput {
+
+                        Text {
+                            visible: netPill.secretNote !== ""
                             width: parent.width
-                            echoMode: TextInput.Password
-                            placeholder: "new password"
-                            text: netPill.newPsk
-                            onEdited: netPill.newPsk = text
+                            text: netPill.secretNote
+                                + (netPill.pwField !== netPill.curSecret
+                                   ? "  \u2014  changed, will be written on save" : "")
+                            wrapMode: Text.WordWrap
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 10
+                            lineHeight: 1.3
+                            color: netPill.curSecret === "" ? Colors.warn : Colors.textFaint
+                        }
+
+                        // Where a newly saved secret goes. Agent-owned is
+                        // NetworkManager asking a secret agent for it on
+                        // every connect -- with no agent running, that is
+                        // a connection that silently never comes up.
+                        Item {
+                            width: parent.width
+                            height: 20
+                            MiniButton {
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter
+                                readonly property string fkey: netPill.editIsEap
+                                    ? "802-1x.password-flags"
+                                    : "802-11-wireless-security.psk-flags"
+                                readonly property bool stored:
+                                    (netPill.editValues[fkey] ?? "") === "0"
+                                label: (stored ? "\u25cf " : "\u25cb ")
+                                       + "keep the password in the profile, not the keyring"
+                                tint: stored ? Colors.accent : Colors.textFaint
+                                onClicked: netPill.setEditValue(fkey, stored ? "1" : "0")
+                            }
+                        }
+
+                        // Worth saying out loud on a campus network:
+                        // without a CA cert and a domain match, the
+                        // client accepts whatever RADIUS server answers,
+                        // and anyone can stand up an AP with this SSID
+                        // and collect the MSCHAPv2 exchange.
+                        Text {
+                            visible: netPill.editIsEap
+                                     && (netPill.editValues["802-1x.ca-cert"] ?? "") === ""
+                                     && (netPill.editValues["802-1x.domain-suffix-match"] ?? "") === ""
+                            width: parent.width
+                            text: "\u26a0  No CA cert and no domain match: this profile "
+                                + "trusts any RADIUS server that answers for this SSID. "
+                                + "Set at least domain match to your provider's server "
+                                + "domain."
+                            wrapMode: Text.WordWrap
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 10
+                            lineHeight: 1.3
+                            color: Colors.warn
                         }
                     }
 
@@ -672,6 +1204,71 @@ Pill {
                                 font.family: "JetBrainsMono Nerd Font"
                                 font.pixelSize: 10
                                 color: Colors.warn
+                            }
+                        }
+                    }
+
+                    // nmcli's own failure message. Previously nothing was
+                    // shown at all when an action failed.
+                    Rectangle {
+                        visible: netPill.errText !== ""
+                        width: panelColumn.width
+                        implicitHeight: errCol.implicitHeight + 16
+                        radius: 9
+                        color: Qt.alpha(Colors.danger, 0.12)
+                        border.width: 1
+                        border.color: Qt.alpha(Colors.danger, 0.45)
+
+                        Column {
+                            id: errCol
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.margins: 8
+                            spacing: 4
+
+                            Item {
+                                width: parent.width
+                                height: errMsg.implicitHeight
+                                Text {
+                                    id: errMsg
+                                    anchors.left: parent.left
+                                    anchors.right: errClose.left
+                                    anchors.rightMargin: 6
+                                    text: "⚠  " + netPill.errText
+                                    wrapMode: Text.WordWrap
+                                    font.family: "JetBrainsMono Nerd Font"
+                                    font.pixelSize: 11
+                                    color: Colors.danger
+                                }
+                                MiniButton {
+                                    id: errClose
+                                    anchors.right: parent.right
+                                    anchors.top: parent.top
+                                    label: "dismiss"
+                                    onClicked: netPill.errText = ""
+                                }
+                            }
+
+                            // Almost always the real cause when nmcli
+                            // refuses: NetworkManager handed the request
+                            // to polkit and nothing answered. Taking
+                            // polkit out of NetworkManager entirely is
+                            // the fix that needs no agent.
+                            Text {
+                                visible: netPill.errIsAuth
+                                width: parent.width
+                                text: "NetworkManager asked polkit for authorization.\n"
+                                    + "Write /etc/NetworkManager/conf.d/99-no-polkit.conf:\n"
+                                    + "  [main]\n"
+                                    + "  auth-polkit=false\n"
+                                    + "then: sudo systemctl reload NetworkManager\n"
+                                    + "Check with: nmcli general permissions"
+                                wrapMode: Text.WordWrap
+                                font.family: "JetBrainsMono Nerd Font"
+                                font.pixelSize: 10
+                                lineHeight: 1.3
+                                color: Colors.textDim
                             }
                         }
                     }
@@ -785,13 +1382,70 @@ Pill {
                         width: parent.width
                         height: 16
                         SectionLabel { anchors.verticalCenter: parent.verticalCenter; text: "WI-FI NETWORKS" }
-                        MiniButton {
+                        Row {
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
-                            label: "rescan"
-                            onClicked: {
-                                netAction.run(["nmcli", "dev", "wifi", "rescan"], "scanning");
-                                rescanSettle.restart();
+                            spacing: 6
+                            MiniButton {
+                                label: hiddenBox.visible ? "cancel" : "hidden…"
+                                onClicked: {
+                                    hiddenBox.visible = !hiddenBox.visible;
+                                    if (hiddenBox.visible) hiddenSsid.focusInput();
+                                }
+                            }
+                            MiniButton {
+                                label: "rescan"
+                                onClicked: {
+                                    netAction.run(["nmcli", "dev", "wifi", "rescan"], "scanning");
+                                    rescanSettle.restart();
+                                }
+                            }
+                        }
+                    }
+
+                    // A hidden network is not in the scan list at all, so
+                    // it can only be joined by typing the SSID. `hidden
+                    // yes` is what makes NetworkManager probe for it
+                    // instead of waiting to see it beaconed.
+                    Column {
+                        id: hiddenBox
+                        visible: false
+                        width: panelColumn.width
+                        spacing: 6
+
+                        Row {
+                            width: parent.width
+                            spacing: 6
+                            MiniInput {
+                                id: hiddenSsid
+                                width: (parent.width - 6) * 0.45
+                                placeholder: "hidden SSID"
+                                onSubmitted: hiddenPass.focusInput()
+                            }
+                            MiniInput {
+                                id: hiddenPass
+                                width: parent.width - hiddenSsid.width - 6 - 52
+                                echoMode: TextInput.Password
+                                placeholder: "password (blank = open)"
+                                onSubmitted: hiddenGo.clicked()
+                            }
+                            MiniButton {
+                                id: hiddenGo
+                                anchors.verticalCenter: hiddenSsid.verticalCenter
+                                label: "join"
+                                tint: Colors.accent
+                                onClicked: {
+                                    if (hiddenSsid.text === "") return;
+                                    const pass = hiddenPass.text;
+                                    netAction.runSh(
+                                        'nmcli con delete id "$1" >/dev/null 2>&1; ' +
+                                        'if [ -n "$2" ]; then ' +
+                                        'exec nmcli dev wifi connect "$1" password "$2" hidden yes; ' +
+                                        'else exec nmcli dev wifi connect "$1" hidden yes; fi',
+                                        [hiddenSsid.text, pass], "connecting");
+                                    hiddenPass.text = "";
+                                    hiddenBox.visible = false;
+                                }
                             }
                         }
                     }
@@ -808,6 +1462,8 @@ Pill {
                                 netPill.savedNames.indexOf(modelData.ssid) !== -1
                             readonly property bool askingPassword:
                                 netPill.expandedSsid === modelData.ssid
+                            readonly property bool revealed:
+                                netPill.revealSsid === modelData.ssid
 
                             width: panelColumn.width
                             implicitHeight: wifiCol.implicitHeight + 16
@@ -860,9 +1516,32 @@ Pill {
                                         anchors.verticalCenter: parent.verticalCenter
                                         spacing: 6
                                         MiniButton {
+                                            visible: wifiRow.known && wifiRow.secured
+                                                     && wifiMouse.containsMouse
+                                            label: wifiRow.revealed ? "hide" : "pass"
+                                            onClicked: {
+                                                if (wifiRow.revealed) {
+                                                    netPill.revealSsid = "";
+                                                    netPill.revealPsk = "";
+                                                    netPill.revealNote = "";
+                                                    netPill.revealCanRoot = false;
+                                                } else {
+                                                    revealLoad.load(wifiRow.modelData.ssid);
+                                                }
+                                            }
+                                        }
+                                        MiniButton {
                                             visible: wifiRow.known && wifiMouse.containsMouse
                                             label: "edit"
                                             onClicked: netPill.openEditor(wifiRow.modelData.ssid)
+                                        }
+                                        MiniButton {
+                                            visible: wifiRow.known && wifiMouse.containsMouse
+                                            label: "forget"
+                                            tint: Colors.danger
+                                            onClicked: netAction.runSh(
+                                                'nmcli con delete id "$1"',
+                                                [wifiRow.modelData.ssid], "forgetting")
                                         }
                                         Text {
                                             anchors.verticalCenter: parent.verticalCenter
@@ -877,16 +1556,109 @@ Pill {
                                     }
                                 }
 
+                                // Saved key for a known network, plus why it
+                                // is not readable when it is not.
+                                Rectangle {
+                                    visible: wifiRow.revealed
+                                    width: parent.width
+                                    implicitHeight: pskCol.implicitHeight + 12
+                                    radius: 7
+                                    color: Colors.mantle
+                                    border.width: 1
+                                    border.color: Colors.outline
+
+                                    Column {
+                                        id: pskCol
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.top: parent.top
+                                        anchors.margins: 6
+                                        spacing: 5
+
+                                        Item {
+                                            width: parent.width
+                                            height: 20
+                                            Text {
+                                                anchors.left: parent.left
+                                                anchors.leftMargin: 2
+                                                anchors.right: pskBtns.left
+                                                anchors.rightMargin: 6
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: netPill.revealPsk
+                                                elide: Text.ElideRight
+                                                font.family: "JetBrainsMono Nerd Font"
+                                                font.pixelSize: 11
+                                                color: netPill.revealNote === ""
+                                                    ? Colors.textMain : Colors.textFaint
+                                            }
+                                            Row {
+                                                id: pskBtns
+                                                anchors.right: parent.right
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                spacing: 5
+                                                MiniButton {
+                                                    visible: netPill.revealCanRoot
+                                                    label: "read as root"
+                                                    tint: Colors.warn
+                                                    onClicked: revealRoot.run()
+                                                }
+                                                MiniButton {
+                                                    visible: netPill.revealNote !== ""
+                                                             && netPill.revealDiag !== ""
+                                                    label: "copy diagnosis"
+                                                    onClicked: Quickshell.execDetached(
+                                                        ["sh", "-c", 'printf %s "$1" | wl-copy',
+                                                         "--", netPill.revealDiag])
+                                                }
+                                                MiniButton {
+                                                    visible: netPill.revealNote === ""
+                                                             && netPill.revealPsk !== "…"
+                                                    label: "copy"
+                                                    onClicked: Quickshell.execDetached(
+                                                        ["sh", "-c", 'printf %s "$1" | wl-copy',
+                                                         "--", netPill.revealPsk])
+                                                }
+                                            }
+                                        }
+
+                                        Text {
+                                            visible: netPill.revealNote !== ""
+                                            width: parent.width
+                                            text: netPill.revealNote
+                                            wrapMode: Text.WordWrap
+                                            font.family: "JetBrainsMono Nerd Font"
+                                            font.pixelSize: 10
+                                            lineHeight: 1.3
+                                            color: Colors.warn
+                                        }
+                                    }
+                                }
+
                                 Row {
+                                    id: passRow
                                     visible: wifiRow.askingPassword
                                     width: parent.width
                                     spacing: 6
+
+                                    // Focus follows the box opening, so the
+                                    // password can be typed without a second
+                                    // click into the field.
+                                    onVisibleChanged: if (visible) passInput.focusInput()
+
                                     MiniInput {
                                         id: passInput
-                                        width: parent.width - 70
-                                        echoMode: TextInput.Password
+                                        width: parent.width - 110
+                                        echoMode: passShow.on ? TextInput.Normal
+                                                              : TextInput.Password
                                         placeholder: "password"
                                         onSubmitted: passGo.clicked()
+                                    }
+                                    MiniButton {
+                                        id: passShow
+                                        property bool on: false
+                                        anchors.verticalCenter: passInput.verticalCenter
+                                        label: on ? "hide" : "show"
+                                        onClicked: { on = !on; passInput.focusInput(); }
                                     }
                                     MiniButton {
                                         id: passGo
@@ -895,9 +1667,19 @@ Pill {
                                         tint: Colors.accent
                                         onClicked: {
                                             if (passInput.text === "") return;
+                                            // A stale profile for this SSID (wrong
+                                            // saved key, or one left by a failed
+                                            // attempt) makes `dev wifi connect`
+                                            // reuse the old secret and fail with
+                                            // "Secrets were required": delete it
+                                            // first, then connect fresh. The
+                                            // delete is allowed to fail -- there
+                                            // usually is no profile yet.
                                             netAction.runSh(
-                                                'nmcli dev wifi connect "$1" password "$2"',
-                                                [wifiRow.modelData.ssid, passInput.text], "connecting");
+                                                'nmcli con delete id "$1" >/dev/null 2>&1; ' +
+                                                'exec nmcli dev wifi connect "$1" password "$2"',
+                                                [wifiRow.modelData.ssid, passInput.text],
+                                                "connecting");
                                             passInput.text = "";
                                             netPill.expandedSsid = "";
                                         }
@@ -915,8 +1697,15 @@ Pill {
                                     if (m.inUse) {
                                         netAction.runSh('nmcli con down id "$1"', [m.ssid], "disconnecting");
                                     } else if (wifiRow.known || !wifiRow.secured) {
+                                        // `con up` for a saved profile, falling
+                                        // back to a fresh connect. Both write to
+                                        // stderr and the handler keeps the last
+                                        // line, so if both fail the message
+                                        // shown is the fallback's -- the
+                                        // relevant one.
                                         netAction.runSh(
-                                            'nmcli con up id "$1" 2>/dev/null || nmcli dev wifi connect "$1"',
+                                            'nmcli con up id "$1" || ' +
+                                            'nmcli dev wifi connect "$1"',
                                             [m.ssid], "connecting");
                                     } else {
                                         netPill.expandedSsid = wifiRow.askingPassword ? "" : m.ssid;
