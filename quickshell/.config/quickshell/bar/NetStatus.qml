@@ -190,6 +190,59 @@ Pill {
         editValues = v;
     }
 
+    // Join a network by BUILDING the profile, not by asking
+    // NetworkManager to work the AP out for itself.
+    //
+    // `nmcli dev wifi connect <ssid> password <pw>` fails with "Failed
+    // to determine AP security information" whenever it cannot read the
+    // security of a matching AP out of its scan cache: a scan that has
+    // gone stale, an AP that stopped beaconing for a moment, a hidden
+    // SSID, or a band the card was not on during the last scan. The
+    // password is irrelevant to that error -- it never got as far as
+    // authenticating.
+    //
+    // The scan row already tells us the security ("WPA2", "WPA3",
+    // "WPA2 802.1X", "WEP", ""), so key-mgmt can be stated outright and
+    // the guesswork disappears. Only if `con add` itself fails do we
+    // fall back to the old command.
+    function joinWifi(ssid, pass, security, hidden) {
+        const script =
+            'ssid="$1"; pw="$2"; sec="$3"; hid="$4"; ' +
+            'case "$sec" in ' +
+            '  *SAE*|*WPA3*) km=sae ;; ' +
+            '  *802.1X*|*802.1x*) km=eap ;; ' +
+            '  *WPA*) km=wpa-psk ;; ' +
+            '  *WEP*) km=wep ;; ' +
+            '  *) km=open ;; ' +
+            'esac; ' +
+            // Bail out BEFORE the delete: an 802.1X network cannot be
+            // joined from a password box, and deleting first would
+            // throw away a working profile to achieve nothing.
+            'if [ "$km" = eap ]; then ' +
+            '  echo "This is an 802.1X network: it needs an identity and an EAP ' +
+            'method, not just a password. Connect once with nm-connection-editor ' +
+            'or nmcli, then edit it here." >&2; exit 2; fi; ' +
+            'nmcli con delete id "$ssid" >/dev/null 2>&1; ' +
+            'set -- con add type wifi con-name "$ssid" ssid "$ssid"; ' +
+            'if [ "$hid" = yes ]; then set -- "$@" 802-11-wireless.hidden yes; fi; ' +
+            'case "$km" in ' +
+            '  sae) set -- "$@" wifi-sec.key-mgmt sae wifi-sec.psk "$pw" ' +
+            '       wifi-sec.psk-flags 0 ;; ' +
+            '  wpa-psk) set -- "$@" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$pw" ' +
+            '       wifi-sec.psk-flags 0 ;; ' +
+            '  wep) set -- "$@" wifi-sec.key-mgmt none wifi-sec.wep-key0 "$pw" ' +
+            '       wifi-sec.wep-key-flags 0 ;; ' +
+            'esac; ' +
+            'if nmcli "$@" >/dev/null 2>&1; then exec nmcli con up id "$ssid"; fi; ' +
+            // con add refused the profile: let nmcli try it its own way
+            // so its message is the one that reaches the panel.
+            'nmcli con delete id "$ssid" >/dev/null 2>&1; ' +
+            'if [ "$km" = open ]; then exec nmcli dev wifi connect "$ssid"; fi; ' +
+            'exec nmcli dev wifi connect "$ssid" password "$pw"';
+        netAction.runSh(script, [ssid, pass, security ?? "", hidden ? "yes" : "no"],
+                        "connecting");
+    }
+
     function saveEdit() {
         const args = ["nmcli", "con", "mod", editName];
         for (const k of editKeys) {
@@ -1436,13 +1489,13 @@ Pill {
                                 tint: Colors.accent
                                 onClicked: {
                                     if (hiddenSsid.text === "") return;
-                                    const pass = hiddenPass.text;
-                                    netAction.runSh(
-                                        'nmcli con delete id "$1" >/dev/null 2>&1; ' +
-                                        'if [ -n "$2" ]; then ' +
-                                        'exec nmcli dev wifi connect "$1" password "$2" hidden yes; ' +
-                                        'else exec nmcli dev wifi connect "$1" hidden yes; fi',
-                                        [hiddenSsid.text, pass], "connecting");
+                                    // A hidden AP is never in the scan
+                                    // cache, so security has to be
+                                    // assumed: WPA unless no password
+                                    // was given.
+                                    netPill.joinWifi(
+                                        hiddenSsid.text, hiddenPass.text,
+                                        hiddenPass.text === "" ? "" : "WPA2", true);
                                     hiddenPass.text = "";
                                     hiddenBox.visible = false;
                                 }
@@ -1667,19 +1720,11 @@ Pill {
                                         tint: Colors.accent
                                         onClicked: {
                                             if (passInput.text === "") return;
-                                            // A stale profile for this SSID (wrong
-                                            // saved key, or one left by a failed
-                                            // attempt) makes `dev wifi connect`
-                                            // reuse the old secret and fail with
-                                            // "Secrets were required": delete it
-                                            // first, then connect fresh. The
-                                            // delete is allowed to fail -- there
-                                            // usually is no profile yet.
-                                            netAction.runSh(
-                                                'nmcli con delete id "$1" >/dev/null 2>&1; ' +
-                                                'exec nmcli dev wifi connect "$1" password "$2"',
-                                                [wifiRow.modelData.ssid, passInput.text],
-                                                "connecting");
+                                            netPill.joinWifi(
+                                                wifiRow.modelData.ssid,
+                                                passInput.text,
+                                                wifiRow.modelData.security,
+                                                false);
                                             passInput.text = "";
                                             netPill.expandedSsid = "";
                                         }
@@ -1696,17 +1741,16 @@ Pill {
                                     const m = wifiRow.modelData;
                                     if (m.inUse) {
                                         netAction.runSh('nmcli con down id "$1"', [m.ssid], "disconnecting");
-                                    } else if (wifiRow.known || !wifiRow.secured) {
-                                        // `con up` for a saved profile, falling
-                                        // back to a fresh connect. Both write to
-                                        // stderr and the handler keeps the last
-                                        // line, so if both fail the message
-                                        // shown is the fallback's -- the
-                                        // relevant one.
-                                        netAction.runSh(
-                                            'nmcli con up id "$1" || ' +
-                                            'nmcli dev wifi connect "$1"',
-                                            [m.ssid], "connecting");
+                                    } else if (wifiRow.known) {
+                                        // Saved profile: bring it up as-is. No
+                                        // fallback to `dev wifi connect` here --
+                                        // that is what produced "Failed to
+                                        // determine AP security information" and
+                                        // buried the real reason `con up` failed.
+                                        netAction.runSh('nmcli con up id "$1"',
+                                                        [m.ssid], "connecting");
+                                    } else if (!wifiRow.secured) {
+                                        netPill.joinWifi(m.ssid, "", m.security, false);
                                     } else {
                                         netPill.expandedSsid = wifiRow.askingPassword ? "" : m.ssid;
                                     }
