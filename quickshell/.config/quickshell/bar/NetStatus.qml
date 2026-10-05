@@ -215,13 +215,11 @@ Pill {
             '  *WEP*) km=wep ;; ' +
             '  *) km=open ;; ' +
             'esac; ' +
-            // Bail out BEFORE the delete: an 802.1X network cannot be
-            // joined from a password box, and deleting first would
+            // Bail out BEFORE the delete: an 802.1X network needs the
+            // enterprise form (joinWifiEap), and deleting first would
             // throw away a working profile to achieve nothing.
             'if [ "$km" = eap ]; then ' +
-            '  echo "This is an 802.1X network: it needs an identity and an EAP ' +
-            'method, not just a password. Connect once with nm-connection-editor ' +
-            'or nmcli, then edit it here." >&2; exit 2; fi; ' +
+            '  echo "802.1X network -- use the enterprise fields." >&2; exit 2; fi; ' +
             'nmcli con delete id "$ssid" >/dev/null 2>&1; ' +
             'set -- con add type wifi con-name "$ssid" ssid "$ssid"; ' +
             'if [ "$hid" = yes ]; then set -- "$@" 802-11-wireless.hidden yes; fi; ' +
@@ -241,6 +239,67 @@ Pill {
             'exec nmcli dev wifi connect "$ssid" password "$pw"';
         netAction.runSh(script, [ssid, pass, security ?? "", hidden ? "yes" : "no"],
                         "connecting");
+    }
+
+    // The enterprise counterpart. An 802.1X network has no shared key,
+    // so there is nothing for `dev wifi connect ... password ...` to do:
+    // the profile has to carry an EAP method, an identity and an inner
+    // auth before it can associate. Built here rather than sending you
+    // to nm-connection-editor for the one network type the panel could
+    // not do itself.
+    //
+    // password-flags 0 keeps the password in the profile. Left at the
+    // default it is agent-owned, NetworkManager asks a secret agent on
+    // every connect, and with no agent running the connection silently
+    // never comes up.
+    function joinWifiEap(ssid, eap, identity, anon, phase2, pass, domain, caCert) {
+        const script =
+            'ssid="$1"; eap="$2"; ident="$3"; anon="$4"; ph2="$5"; ' +
+            'pw="$6"; dom="$7"; ca="$8"; ' +
+            'nmcli con delete id "$ssid" >/dev/null 2>&1; ' +
+            'set -- con add type wifi con-name "$ssid" ssid "$ssid" ' +
+            '  wifi-sec.key-mgmt wpa-eap ' +
+            '  802-1x.eap "$eap" ' +
+            '  802-1x.identity "$ident" ' +
+            '  802-1x.password "$pw" ' +
+            '  802-1x.password-flags 0; ' +
+            'if [ -n "$anon" ]; then ' +
+            '  set -- "$@" 802-1x.anonymous-identity "$anon"; fi; ' +
+            'if [ -n "$dom" ]; then ' +
+            '  set -- "$@" 802-1x.domain-suffix-match "$dom"; fi; ' +
+            'if [ -n "$ca" ]; then set -- "$@" 802-1x.ca-cert "$ca"; fi; ' +
+            // phase2 only exists for the tunnelled methods; setting it
+            // on tls or pwd makes nmcli reject the whole profile.
+            'case "$eap" in peap|ttls) ' +
+            '  set -- "$@" 802-1x.phase2-auth "$ph2" ;; esac; ' +
+            'nmcli "$@" >/dev/null || exit 1; ' +
+            'exec nmcli con up id "$ssid"';
+        netAction.runSh(script,
+            [ssid, eap, identity, anon ?? "", phase2, pass, domain ?? "", caCert ?? ""],
+            "connecting");
+    }
+
+    // Enterprise form state. Held here rather than in the delegate so a
+    // list refresh (every 10s while the panel is open) cannot wipe what
+    // is half-typed.
+    property string eapMethod: "peap"
+    property string eapPhase2: "mschapv2"
+    property string eapIdentity: ""
+    property string eapAnon: ""
+    property string eapPassword: ""
+    property string eapDomain: ""
+    property string eapCa: ""
+    property bool eapShowPw: false
+
+    function resetEapForm() {
+        eapMethod = "peap";
+        eapPhase2 = "mschapv2";
+        eapIdentity = "";
+        eapAnon = "";
+        eapPassword = "";
+        eapDomain = "";
+        eapCa = "";
+        eapShowPw = false;
     }
 
     function saveEdit() {
@@ -920,6 +979,7 @@ Pill {
                 netPill.revealNote = "";
                 netPill.revealCanRoot = false;
                 netPill.errText = "";
+                netPill.resetEapForm();
             }
         }
 
@@ -1517,6 +1577,11 @@ Pill {
                                 netPill.expandedSsid === modelData.ssid
                             readonly property bool revealed:
                                 netPill.revealSsid === modelData.ssid
+                            // The scan row's SECURITY column reads
+                            // "WPA2 802.1X" for an enterprise network.
+                            readonly property bool isEap:
+                                (modelData.security ?? "").toUpperCase()
+                                    .indexOf("802.1X") !== -1
 
                             width: panelColumn.width
                             implicitHeight: wifiCol.implicitHeight + 16
@@ -1601,6 +1666,7 @@ Pill {
                                             visible: wifiMouse.containsMouse || wifiRow.modelData.inUse
                                             text: wifiRow.modelData.inUse ? "disconnect"
                                                 : wifiRow.known ? "connect"
+                                                : wifiRow.isEap ? "802.1X\u2026"
                                                 : wifiRow.secured ? "pass\u2026" : "connect"
                                             font.family: "JetBrainsMono Nerd Font"
                                             font.pixelSize: 10
@@ -1687,9 +1753,10 @@ Pill {
                                     }
                                 }
 
+                                // WPA-PSK / open: one password box.
                                 Row {
                                     id: passRow
-                                    visible: wifiRow.askingPassword
+                                    visible: wifiRow.askingPassword && !wifiRow.isEap
                                     width: parent.width
                                     spacing: 6
 
@@ -1728,6 +1795,144 @@ Pill {
                                             passInput.text = "";
                                             netPill.expandedSsid = "";
                                         }
+                                    }
+                                }
+
+                                // 802.1X: no shared key exists, so the
+                                // profile has to be built from an EAP
+                                // method, an identity and an inner auth
+                                // before it can associate at all.
+                                Column {
+                                    id: eapForm
+                                    visible: wifiRow.askingPassword && wifiRow.isEap
+                                    width: parent.width
+                                    spacing: 6
+
+                                    onVisibleChanged: if (visible) eapIdent.focusInput()
+
+                                    Row {
+                                        width: parent.width
+                                        spacing: 6
+                                        MiniButton {
+                                            label: "eap: " + netPill.eapMethod
+                                            onClicked: {
+                                                const o = ["peap", "ttls", "tls", "pwd"];
+                                                netPill.eapMethod =
+                                                    o[(o.indexOf(netPill.eapMethod) + 1) % o.length];
+                                            }
+                                        }
+                                        MiniButton {
+                                            visible: netPill.eapMethod === "peap"
+                                                     || netPill.eapMethod === "ttls"
+                                            label: "inner: " + netPill.eapPhase2
+                                            onClicked: {
+                                                const o = ["mschapv2", "pap", "gtc", "chap", "md5"];
+                                                netPill.eapPhase2 =
+                                                    o[(o.indexOf(netPill.eapPhase2) + 1) % o.length];
+                                            }
+                                        }
+                                    }
+
+                                    MiniInput {
+                                        id: eapIdent
+                                        width: parent.width
+                                        placeholder: "identity / username"
+                                        text: netPill.eapIdentity
+                                        onEdited: netPill.eapIdentity = text
+                                        onSubmitted: eapPw.focusInput()
+                                    }
+
+                                    Row {
+                                        width: parent.width
+                                        spacing: 6
+                                        MiniInput {
+                                            id: eapPw
+                                            width: parent.width - 110
+                                            echoMode: netPill.eapShowPw ? TextInput.Normal
+                                                                        : TextInput.Password
+                                            placeholder: "password"
+                                            text: netPill.eapPassword
+                                            onEdited: netPill.eapPassword = text
+                                            onSubmitted: eapGo.clicked()
+                                        }
+                                        MiniButton {
+                                            anchors.verticalCenter: eapPw.verticalCenter
+                                            label: netPill.eapShowPw ? "hide" : "show"
+                                            onClicked: {
+                                                netPill.eapShowPw = !netPill.eapShowPw;
+                                                eapPw.focusInput();
+                                            }
+                                        }
+                                        MiniButton {
+                                            id: eapGo
+                                            anchors.verticalCenter: eapPw.verticalCenter
+                                            label: "join"
+                                            tint: Colors.accent
+                                            onClicked: {
+                                                if (netPill.eapIdentity === ""
+                                                    || netPill.eapPassword === "") return;
+                                                netPill.joinWifiEap(
+                                                    wifiRow.modelData.ssid,
+                                                    netPill.eapMethod,
+                                                    netPill.eapIdentity,
+                                                    netPill.eapAnon,
+                                                    netPill.eapPhase2,
+                                                    netPill.eapPassword,
+                                                    netPill.eapDomain,
+                                                    netPill.eapCa);
+                                                netPill.expandedSsid = "";
+                                                netPill.resetEapForm();
+                                            }
+                                        }
+                                    }
+
+                                    // Optional, and folded away until
+                                    // asked for: most people need only
+                                    // identity + password, but on a
+                                    // campus network the server checks
+                                    // are the difference between this
+                                    // profile and a safe one.
+                                    MiniButton {
+                                        id: eapMore
+                                        property bool on: false
+                                        label: (on ? "\u25bc " : "\u25b6 ")
+                                               + "anonymous identity, server checks"
+                                        onClicked: on = !on
+                                    }
+
+                                    MiniInput {
+                                        visible: eapMore.on
+                                        width: parent.width
+                                        placeholder: "anonymous identity (optional)"
+                                        text: netPill.eapAnon
+                                        onEdited: netPill.eapAnon = text
+                                    }
+                                    MiniInput {
+                                        visible: eapMore.on
+                                        width: parent.width
+                                        placeholder: "domain match, e.g. radius.pb.edu.pl"
+                                        text: netPill.eapDomain
+                                        onEdited: netPill.eapDomain = text
+                                    }
+                                    MiniInput {
+                                        visible: eapMore.on
+                                        width: parent.width
+                                        placeholder: "CA certificate path (optional)"
+                                        text: netPill.eapCa
+                                        onEdited: netPill.eapCa = text
+                                    }
+
+                                    Text {
+                                        visible: netPill.eapDomain === "" && netPill.eapCa === ""
+                                        width: parent.width
+                                        text: "\u26a0  Without a domain match or CA cert this "
+                                            + "profile trusts any RADIUS server answering for "
+                                            + "this SSID."
+                                        wrapMode: Text.WordWrap
+                                        font.family: "JetBrainsMono Nerd Font"
+                                        font.pixelSize: 10
+                                        lineHeight: 1.3
+                                        color: Colors.warn
                                     }
                                 }
                             }
