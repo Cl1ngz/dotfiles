@@ -52,28 +52,28 @@
   },
   "geometry-of-main_window_geometry": {
     "frame_geometry": {
-      "height": 1039,
-      "width": 1912,
+      "height": 1030,
+      "width": 952,
       "x": 0,
       "y": 0
     },
     "full_screened": false,
     "geometry": {
-      "height": 1039,
-      "width": 1912,
+      "height": 1030,
+      "width": 952,
       "x": 0,
       "y": 0
     },
     "maximized": true,
     "normal_geometry": {
-      "height": 1039,
+      "height": 1030,
       "width": 952,
       "x": 0,
       "y": 0
     },
     "qt": {
       "__class__": "bytearray",
-      "__value__": "AdnQywADAAAAAAAAAAAAAAAAB3cAAAQOAAAAAAAAAAAAAAO3AAAEDgAAAAACAAAAB4AAAAAAAAAAAAAAB3cAAAQO"
+      "__value__": "AdnQywADAAAAAAAAAAAAAAAAA7cAAAQFAAAAAAAAAAAAAAO3AAAEBQAAAAACAAAAB4AAAAAAAAAAAAAAA7cAAAQF"
     },
     "screen": {
       "depth": 32,
@@ -155,7 +155,7 @@
   "llm_lookup_tab_index": 0,
   "main_window_state": {
     "__class__": "bytearray",
-    "__value__": "AAAA/wAAAAH9AAAAAgAAAAAAAAEAAAAEOPwCAAAAAvsAAAAQAHQAbwBjAC0AZABvAGMAawAAAAAAAAAEOAAAAIoA////+wAAABYAcwBlAGEAcgBjAGgALQBkAG8AYwBrAAAAAAD/////AAAAmgD///8AAAABAAACWAAABA/8AgAAAAT7AAAAFgBsAG8AbwBrAHUAcAAtAGQAbwBjAGsAAAAAAAAABA8AAACeAP////sAAAAcAGIAbwBvAGsAbQBhAHIAawBzAC0AZABvAGMAawAAAAAA/////wAAAPIA////+wAAABwAaQBuAHMAcABlAGMAdABvAHIALQBkAG8AYwBrAAAAAAAAAAQQAAAAFAD////7AAAAHgBoAGkAZwBoAGwAaQBnAGgAdABzAC0AZABvAGMAawAAAAAAAAAEDwAAANcA////AAAHeAAABA8AAAAEAAAABAAAAAgAAAAI/AAAAAEAAAAAAAAAAQAAAB4AYQBjAHQAaQBvAG4AcwBfAHQAbwBvAGwAYgBhAHICAAAAAP////8AAAAAAAAAAA=="
+    "__value__": "AAAA/wAAAAH9AAAAAgAAAAAAAAEAAAAEOPwCAAAAAvsAAAAQAHQAbwBjAC0AZABvAGMAawAAAAAAAAAEOAAAAIoA////+wAAABYAcwBlAGEAcgBjAGgALQBkAG8AYwBrAAAAAAD/////AAAAmgD///8AAAABAAACWAAABA/8AgAAAAT7AAAAFgBsAG8AbwBrAHUAcAAtAGQAbwBjAGsAAAAAAAAABA8AAACeAP////sAAAAcAGIAbwBvAGsAbQBhAHIAawBzAC0AZABvAGMAawAAAAAA/////wAAAPIA////+wAAABwAaQBuAHMAcABlAGMAdABvAHIALQBkAG8AYwBrAAAAAAAAAAQQAAAAFAD////7AAAAHgBoAGkAZwBoAGwAaQBnAGgAdABzAC0AZABvAGMAawAAAAAAAAAEDwAAANcA////AAADuAAABAYAAAAEAAAABAAAAAgAAAAI/AAAAAEAAAAAAAAAAQAAAB4AYQBjAHQAaQBvAG4AcwBfAHQAbwBvAGwAYgBhAHICAAAAAP////8AAAAAAAAAAA=="
   },
   "old_prefs_migrated": true,
   "session_data": {
@@ -169,6 +169,15 @@
       "singleinstance": false
     },
     "standalone_recently_opened": [
+      {
+        "authors": [
+          "Sander van Vugt"
+        ],
+        "key": "/home/cl1ngz/Documents/Calibre_Libarary/Sander van Vugt/Red Hat RHCSATM 9 Cert Guide_ EX200 (for True Epub) (543)/Red Hat RHCSATM 9 Cert Guide_ EX200 (for T - Sander van Vugt.epub",
+        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/Sander van Vugt/Red Hat RHCSATM 9 Cert Guide_ EX200 (for True Epub) (543)/Red Hat RHCSATM 9 Cert Guide_ EX200 (for T - Sander van Vugt.epub",
+        "timestamp": "2026-10-06T07:33:14.323Z",
+        "title": "Red Hat RHCSA™ 9 Cert Guide: EX200 (for True Epub)"
+      },
       {
         "key": "/home/cl1ngz/Downloads/FINAL PYTAŃ.pdf",
         "pathtoebook": "/home/cl1ngz/Downloads/FINAL PYTAŃ.pdf",
@@ -369,15 +378,6 @@
         "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/R. A. Salvatore/Sluga Reliktu (870)/Sluga Reliktu - R. A. Salvatore.epub",
         "timestamp": "2026-05-12T15:16:18.271Z",
         "title": "Ścieżki Mroku 3. Najemnicy 1. Sługa Reliktu"
-      },
-      {
-        "authors": [
-          "R. A. Salvatore"
-        ],
-        "key": "/home/cl1ngz/Documents/Calibre_Libarary/R. A. Salvatore/Grzbiet swiata (869)/Grzbiet swiata - R. A. Salvatore.epub",
-        "pathtoebook": "/home/cl1ngz/Documents/Calibre_Libarary/R. A. Salvatore/Grzbiet swiata (869)/Grzbiet swiata - R. A. Salvatore.epub",
-        "timestamp": "2026-05-12T15:16:09.780Z",
-        "title": "Legenda Drizzta 12. Ścieżki Mroku 2. Grzbiet świata"
       }
     ]
   }
