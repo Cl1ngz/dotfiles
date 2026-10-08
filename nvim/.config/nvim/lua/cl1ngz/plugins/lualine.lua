@@ -7,7 +7,7 @@ return {
 
     lualine.setup({
       options = {
-        theme = "rose-pine",
+        theme = "auto",
         globalstatus = true, -- Better for Neovim 0.10
         component_separators = { left = "|", right = "|" },
         section_separators = { left = "", right = "" },
