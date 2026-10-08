@@ -42,6 +42,7 @@ case "$PM" in
       ripgrep fd \
       cppcheck \
       lazygit \
+      tree-sitter-cli \
       qt6-declarative
     ;;
 
@@ -69,6 +70,7 @@ case "$PM" in
       ripgrep fd-find \
       cppcheck \
       lazygit \
+      tree-sitter-cli \
       qt6-qtdeclarative-devel
     ;;
 
@@ -88,15 +90,43 @@ esac
 # HARD requirement of nvim-treesitter's main branch: it shells out to this
 # binary to compile parsers. Needs >= 0.26.1.
 #
-# Installed via npm rather than the system package manager so the version is
-# consistent everywhere -- distro packages lag, and Homebrew's `tree-sitter`
-# formula ships only the library, not the CLI.
+# Arch and Fedora package it (handled above). Elsewhere we fall back to npm --
+# installed under $HOME, never with sudo. `npm install -g` defaults to
+# /usr/lib/node_modules, which needs root and, on distros like Arch, is owned
+# by the system package manager. Dropping unmanaged files there is a bad idea.
+
+TS_MIN=0.26.1
+
+# true when $1 >= $2
+version_ge() { printf '%s\n%s\n' "$2" "$1" | sort -V -C; }
+
+# `|| true` matters: under `set -euo pipefail` a grep that matches nothing
+# returns non-zero, which would abort the script instead of falling through
+# to the npm install below.
+ts_version() { tree-sitter --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true; }
+
+install_ts_via_npm() {
+  local prefix="$HOME/.local"
+  info "Installing tree-sitter CLI via npm into $prefix"
+  npm install -g --prefix "$prefix" tree-sitter-cli
+
+  if ! command -v tree-sitter >/dev/null 2>&1; then
+    warn "$prefix/bin is not on your PATH. Add this to your shell rc:"
+    warn "    export PATH=\"\$HOME/.local/bin:\$PATH\""
+  fi
+}
 
 if command -v tree-sitter >/dev/null 2>&1; then
-  info "tree-sitter CLI already present ($(tree-sitter --version))"
+  CURRENT="$(ts_version)"
+  if [ -n "$CURRENT" ] && version_ge "$CURRENT" "$TS_MIN"; then
+    info "tree-sitter CLI $CURRENT (>= $TS_MIN) -- ok"
+  else
+    warn "tree-sitter CLI ${CURRENT:-unknown} is older than $TS_MIN."
+    warn "nvim-treesitter's main branch needs $TS_MIN or newer."
+    install_ts_via_npm
+  fi
 else
-  info "Installing tree-sitter CLI via npm"
-  npm install -g tree-sitter-cli
+  install_ts_via_npm
 fi
 
 # --- rust toolchain (optional) ----------------------------------------------
