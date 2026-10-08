@@ -10,7 +10,7 @@ opt.expandtab = true
 opt.autoindent = true
 
 opt.wrap = true
-opt.smoothscroll = true -- New in 0.10: smoother scrolling for wrapped lines
+opt.smoothscroll = true
 opt.cursorline = true
 opt.termguicolors = true
 opt.background = "dark"
@@ -35,7 +35,6 @@ opt.timeoutlen = 300
 -- Better netrw (though you use nvim-tree)
 vim.g.netrw_liststyle = 3
 
--- Load native undotree safely after lazy.nvim has finished its setup
 vim.api.nvim_create_autocmd("User", {
   pattern = "VeryLazy",
   callback = function()
