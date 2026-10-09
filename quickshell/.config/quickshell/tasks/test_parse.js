@@ -42,21 +42,21 @@ const SAMPLE = `# Tasks
 
 Some free-form note that must survive.
 
-- [ ] end project for bash #bash !2
-- [ ] end project for job #job !1
+- [ ] end project for bash @bash !2
+- [ ] end project for job @job !1
 - [ ] buy cable
-- [ ] write docs #coding
+- [ ] write docs @coding
   - [ ] outline
   note under the task
 
 ## Done
 
 ### 2026-10-08
-- [x] programming #coding !3 ✅ 2026-10-08
+- [x] programming @coding !3 ✅ 2026-10-08
 
 ### 2026-10-07
 - [x] fix router #home ✅ 2026-10-07
-- [-] old idea #job
+- [-] old idea @job
 `;
 
 // --- parsing ---------------------------------------------------------
@@ -92,7 +92,7 @@ const roundTripCases = {
     empty: "",
     "only a note": "just prose, no tasks at all\n",
     "tabs for indent": "- [ ] parent\n\t- [ ] child\n",
-    "front matter": "---\ntags: x\n---\n\n- [ ] a #job\n"
+    "front matter": "---\ntags: x\n---\n\n- [ ] a @job\n"
 };
 for (const [name, text] of Object.entries(roundTripCases)) {
     // A no-op edit: set a task's fields to exactly what they already are.
@@ -112,15 +112,15 @@ for (const [name, text] of Object.entries(roundTripCases)) {
 // This is the real guarantee: only the line being changed is rewritten.
 const ODD = `# Tasks
 
-- [x] odd order ✅ 2026-10-01 #job !2
-- [ ]   wide   spacing   #bash
+- [x] odd order ✅ 2026-10-01 @job !2
+- [ ]   wide   spacing   @bash
 - [ ] plain
 `;
 let r = P.editTask(ODD, "- [ ] plain", { text: "plain edited" }, cfg);
 ok("edit leaves odd-order line byte-identical",
-   r.text.indexOf("- [x] odd order ✅ 2026-10-01 #job !2") !== -1, r.text);
+   r.text.indexOf("- [x] odd order ✅ 2026-10-01 @job !2") !== -1, r.text);
 ok("edit leaves odd spacing byte-identical",
-   r.text.indexOf("- [ ]   wide   spacing   #bash") !== -1, r.text);
+   r.text.indexOf("- [ ]   wide   spacing   @bash") !== -1, r.text);
 ok("edit applied to the target", r.text.indexOf("- [ ] plain edited") !== -1, r.text);
 
 // Reading odd order still finds the tokens.
@@ -134,13 +134,13 @@ eq("wide spacing collapses in text only", oddTasks[1].text, "wide spacing");
 // Deleting one task must not reformat its neighbours either.
 r = P.deleteTask(ODD, "- [ ] plain", cfg);
 ok("delete leaves neighbours byte-identical",
-   r.text.indexOf("- [x] odd order ✅ 2026-10-01 #job !2") !== -1
-   && r.text.indexOf("- [ ]   wide   spacing   #bash") !== -1, r.text);
+   r.text.indexOf("- [x] odd order ✅ 2026-10-01 @job !2") !== -1
+   && r.text.indexOf("- [ ]   wide   spacing   @bash") !== -1, r.text);
 
 // Ticking rewrites only the ticked line.
 r = P.tick(ODD, "- [ ] plain", cfg, "2026-10-09");
 ok("tick leaves neighbours byte-identical",
-   r.text.indexOf("- [ ]   wide   spacing   #bash") !== -1, r.text);
+   r.text.indexOf("- [ ]   wide   spacing   @bash") !== -1, r.text);
 
 // --- tick ------------------------------------------------------------
 
@@ -170,7 +170,7 @@ const order2 = r.text.match(/### \d{4}-\d{2}-\d{2}/g);
 eq("older date goes last", order2[order2.length - 1], "### 2026-01-01");
 
 // Subtasks travel with the parent.
-r = P.tick(SAMPLE, "- [ ] write docs #coding", cfg, "2026-10-08");
+r = P.tick(SAMPLE, "- [ ] write docs @coding", cfg, "2026-10-08");
 const doneBlock = r.text.split("### 2026-10-08")[1].split("### ")[0];
 ok("subtask moved with parent", doneBlock.indexOf("- [ ] outline") !== -1, doneBlock);
 ok("note moved with parent", doneBlock.indexOf("note under the task") !== -1, doneBlock);
@@ -184,11 +184,11 @@ eq("stale line leaves text untouched", r.text, SAMPLE);
 
 // --- untick ----------------------------------------------------------
 
-r = P.untick(SAMPLE, "- [x] programming #coding !3 ✅ 2026-10-08", cfg);
+r = P.untick(SAMPLE, "- [x] programming @coding !3 ✅ 2026-10-08", cfg);
 ok("untick succeeds", r.ok, r.reason);
 ok("untick clears the date", r.text.indexOf("✅ 2026-10-08") === -1, r.text);
 ok("untick returns to open section",
-   r.text.split("## Done")[0].indexOf("- [ ] programming #coding !3") !== -1, r.text);
+   r.text.split("## Done")[0].indexOf("- [ ] programming @coding !3") !== -1, r.text);
 ok("emptied heading removed", r.text.indexOf("### 2026-10-08") === -1, r.text);
 ok("other heading kept", r.text.indexOf("### 2026-10-07") !== -1, r.text);
 
@@ -196,7 +196,7 @@ ok("other heading kept", r.text.indexOf("### 2026-10-07") !== -1, r.text);
 
 r = P.addTask(SAMPLE, { text: "new thing", category: "job", importance: 2 }, cfg);
 ok("add writes canonical token order",
-   r.text.indexOf("- [ ] new thing #job !2") !== -1, r.text);
+   r.text.indexOf("- [ ] new thing @job !2") !== -1, r.text);
 ok("add lands in the open section",
    r.text.split("## Done")[0].indexOf("new thing") !== -1, r.text);
 
@@ -204,14 +204,14 @@ r = P.addTask(SAMPLE, { text: "bare", category: null, importance: null }, cfg);
 ok("add with no tokens", r.text.indexOf("- [ ] bare") !== -1, r.text);
 
 r = P.editTask(SAMPLE, "- [ ] buy cable", { category: "job", importance: 1 }, cfg);
-ok("edit adds tokens", r.text.indexOf("- [ ] buy cable #job !1") !== -1, r.text);
+ok("edit adds tokens", r.text.indexOf("- [ ] buy cable @job !1") !== -1, r.text);
 
-r = P.editTask(SAMPLE, "- [ ] end project for bash #bash !2",
+r = P.editTask(SAMPLE, "- [ ] end project for bash @bash !2",
                { text: "renamed", category: null, importance: null }, cfg);
 ok("edit can clear tokens", r.text.indexOf("- [ ] renamed") !== -1, r.text);
-ok("cleared category is gone", r.text.indexOf("renamed #bash") === -1, r.text);
+ok("cleared category is gone", r.text.indexOf("renamed @bash") === -1, r.text);
 
-r = P.deleteTask(SAMPLE, "- [ ] write docs #coding", cfg);
+r = P.deleteTask(SAMPLE, "- [ ] write docs @coding", cfg);
 ok("delete removes the task", r.text.indexOf("write docs") === -1, r.text);
 ok("delete removes its subtask too", r.text.indexOf("- [ ] outline") === -1, r.text);
 ok("delete keeps the rest", r.text.indexOf("buy cable") !== -1, r.text);
@@ -225,14 +225,14 @@ ok("cancel marks [-]", r.text.indexOf("- [-] buy cable") !== -1, r.text);
 // still sitting in the open section.
 const PHONE = `# Tasks
 
-- [ ] still open #job
-- [x] ticked on the phone #bash !2
+- [ ] still open @job
+- [x] ticked on the phone @bash !2
 - [x] also ticked
 
 ## Done
 
 ### 2026-10-07
-- [x] older #job ✅ 2026-10-07
+- [x] older @job ✅ 2026-10-07
 `;
 
 eq("needsStamping detects undated ticks", P.needsStamping(PHONE, cfg), true);
@@ -241,12 +241,12 @@ eq("needsStamping is false when clean", P.needsStamping(SAMPLE, cfg), false);
 r = P.stampUndated(PHONE, cfg, "2026-10-09");
 eq("stamping reports a change", r.changed, true);
 ok("phone tick dated",
-   r.text.indexOf("- [x] ticked on the phone #bash !2 ✅ 2026-10-09") !== -1, r.text);
+   r.text.indexOf("- [x] ticked on the phone @bash !2 ✅ 2026-10-09") !== -1, r.text);
 ok("second phone tick dated", r.text.indexOf("- [x] also ticked ✅ 2026-10-09") !== -1, r.text);
-ok("open task untouched", r.text.split("## Done")[0].indexOf("- [ ] still open #job") !== -1, r.text);
+ok("open task untouched", r.text.split("## Done")[0].indexOf("- [ ] still open @job") !== -1, r.text);
 ok("phone ticks moved out of open section",
    r.text.split("## Done")[0].indexOf("[x]") === -1, r.text);
-ok("already-dated task keeps its date", r.text.indexOf("older #job ✅ 2026-10-07") !== -1, r.text);
+ok("already-dated task keeps its date", r.text.indexOf("older @job ✅ 2026-10-07") !== -1, r.text);
 eq("stamping twice changes nothing more", P.stampUndated(r.text, cfg, "2026-10-09").changed, false);
 eq("stamped file is stable", P.stampUndated(r.text, cfg, "2026-10-09").text, r.text);
 
@@ -268,16 +268,66 @@ ok("open task still open", r.text.split("## Done")[0].indexOf("- [ ] a") !== -1,
 
 r = P.renameCategory(SAMPLE, "job", "work", cfg);
 eq("rename reports count", r.count, 2);
-ok("rename rewrites the tag", r.text.indexOf("#work") !== -1, r.text);
-ok("old tag gone", r.text.indexOf("#job") === -1, r.text);
-ok("unrelated tag untouched", r.text.indexOf("#home") !== -1, r.text);
-ok("rename keeps importance", r.text.indexOf("- [ ] end project for job #work !1") !== -1, r.text);
+ok("rename rewrites the marker", r.text.indexOf("@work") !== -1, r.text);
+ok("old marker gone", r.text.indexOf("@job") === -1, r.text);
+ok("unrelated #tag untouched", r.text.indexOf("#home") !== -1, r.text);
+ok("rename keeps importance", r.text.indexOf("- [ ] end project for job @work !1") !== -1, r.text);
 
 // A tag that merely shares a prefix must not be caught.
-const PREFIX = "- [ ] a #job\n- [ ] b #jobsearch\n";
+const PREFIX = "- [ ] a @job\n- [ ] b @jobsearch\n";
 r = P.renameCategory(PREFIX, "job", "work", { categories: [{ name: "job" }, { name: "jobsearch" }] });
-ok("prefix tag untouched", r.text.indexOf("#jobsearch") !== -1, r.text);
-ok("exact tag renamed", r.text.indexOf("- [ ] a #work") !== -1, r.text);
+ok("prefix marker untouched", r.text.indexOf("@jobsearch") !== -1, r.text);
+ok("exact marker renamed", r.text.indexOf("- [ ] a @work") !== -1, r.text);
+
+// --- @ marker and the #tag migration ------------------------------------
+
+// A #tag the user wrote themselves is now ordinary text and must never
+// be touched -- that is the entire point of moving off #.
+const MIXED = `# Tasks
+
+A note mentioning #job in prose.
+
+- [ ] a #job !1
+- [ ] b #home
+- [ ] c @bash
+- [ ] d #job @bash
+
+## Done
+
+### 2026-10-08
+- [x] e #bash \u2705 2026-10-08
+`;
+
+eq("migration detected", P.needsTagMigration(MIXED, cfg), true);
+const mig = P.migrateTags(MIXED, cfg);
+eq("converted count", mig.count, 2);   // #home is not a category; the @bash line already has one
+ok("legacy tag converted", mig.text.indexOf("- [ ] a @job !1") !== -1, mig.text);
+ok("done task converted", mig.text.indexOf("- [x] e @bash \u2705 2026-10-08") !== -1, mig.text);
+ok("prose #tag untouched",
+   mig.text.indexOf("A note mentioning #job in prose.") !== -1, mig.text);
+ok("non-category #tag untouched", mig.text.indexOf("- [ ] b #home") !== -1, mig.text);
+ok("already-@ line untouched", mig.text.indexOf("- [ ] c @bash") !== -1, mig.text);
+ok("line that already has a category keeps it",
+   mig.text.indexOf("- [ ] d #job @bash") !== -1, mig.text);
+eq("migration is idempotent", P.migrateTags(mig.text, cfg).count, 0);
+eq("nothing to migrate in a clean file", P.needsTagMigration(SAMPLE, cfg), false);
+
+// A category whose name is a prefix of another must not be grabbed.
+const PRE = "- [ ] x #job\n- [ ] y #jobsearch\n";
+const preCfg = { categories: [{ name: "job" }, { name: "jobsearch" }], importance: [] };
+const preMig = P.migrateTags(PRE, preCfg);
+ok("exact legacy match only", preMig.text.indexOf("- [ ] y @jobsearch") !== -1, preMig.text);
+ok("shorter name did not grab it", preMig.text.indexOf("@jobsearch") !== -1, preMig.text);
+
+// @ is what gets written now.
+const added = P.addTask("# Tasks\n", { text: "n", category: "job", importance: 1 }, cfg);
+ok("new tasks are written with @", added.text.indexOf("- [ ] n @job !1") !== -1, added.text);
+eq("no # written", added.text.indexOf("#job"), -1);
+
+// An @word that is not a configured category stays in the text.
+const atTasks = P.readTasks("- [ ] ping @someone about @job\n", cfg);
+eq("unknown @word stays in text", atTasks[0].text, "ping @someone about");
+eq("known @word becomes the category", atTasks[0].category, "job");
 
 // --- config -----------------------------------------------------------
 
@@ -325,20 +375,20 @@ eq("config from empty", P.readConfig(fresh).categories[0].name, "x");
 
 const STATS_SRC = `# Tasks
 
-- [ ] open one #job
+- [ ] open one @job
 
 ## Done
 
 ### 2026-10-08
-- [x] a #job !1 ✅ 2026-10-08
-- [x] b #bash !2 ✅ 2026-10-08
-- [-] cancelled #job ✅ 2026-10-08
+- [x] a @job !1 ✅ 2026-10-08
+- [x] b @bash !2 ✅ 2026-10-08
+- [-] cancelled @job ✅ 2026-10-08
 
 ### 2026-10-07
-- [x] c #job ✅ 2026-10-07
+- [x] c @job ✅ 2026-10-07
 
 ### 2026-10-05
-- [x] d #coding !1 ✅ 2026-10-05
+- [x] d @coding !1 ✅ 2026-10-05
 `;
 
 const st = P.buildStats(STATS_SRC, cfg);
@@ -361,7 +411,7 @@ eq("best day count", P.bestDay(st, null, null).count, 2);
 
 // A done task with no date at all still parses; it just cannot be
 // counted until the dashboard stamps it.
-const UNDATED = "## Done\n\n### 2026-10-08\n- [x] no date #job\n";
+const UNDATED = "## Done\n\n### 2026-10-08\n- [x] no date @job\n";
 eq("undated under heading falls back to heading",
    P.buildStats(UNDATED, cfg).byDate["2026-10-08"].total, 1);
 

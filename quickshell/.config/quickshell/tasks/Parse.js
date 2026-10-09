@@ -2,6 +2,16 @@
 
 // Parser / serializer for the Obsidian task vault.
 //
+// Line format:
+//   - [ ] buy cable @home !2
+//   - [x] fix router @home !1 \u2705 2026-10-08
+//
+// @name  category, matched against config.md
+// !N     importance, matched against config.md
+// \u2705     completion date (the Tasks plugin's marker, written by us)
+//
+// A category is "@name" rather than "#name" on purpose: see CAT_RE.
+//
 // Pure JavaScript, no QML imports, so it runs under node for tests and
 // under Quickshell unchanged.
 //
@@ -39,8 +49,21 @@ var DATE_RE = /✅[ \t]*(\d{4}-\d{2}-\d{2})/;
 // "!2" as a whole token, so "wow!2 things" is not an importance.
 var IMP_RE = /(^|[ \t])!(\d+)(?=[ \t]|$)/;
 
-// Tags: Obsidian allows letters, digits, _, -, / and non-ASCII.
-var TAG_RE = /(^|[ \t])#([^\s#]+)/g;
+// Category marker.
+//
+// Deliberately "@name", not "#name". A # makes Obsidian index the word
+// as a real tag: every category shows up in the tag pane, in
+// autocomplete and as a node in the graph, which buries the tags you
+// actually meant to write. Obsidian attaches no meaning to @, so a
+// category is invisible to it while staying readable in the raw file
+// and typable on a phone.
+//
+// Any #tag you write yourself is now just text to this parser and is
+// carried through untouched.
+var CAT_RE = /(^|[ \t])@([^\s@]+)/g;
+
+// Used only by the one-off migration below, never by normal parsing.
+var LEGACY_PREFIX = "#";
 
 var H2_DONE = /^##[ \t]+Done[ \t]*$/i;
 var H3_DATE = /^###[ \t]+(\d{4}-\d{2}-\d{2})[ \t]*$/;
@@ -104,12 +127,12 @@ function splitBody(body, categoryNames) {
         rest = rest.slice(0, m.index) + m[1] + rest.slice(m.index + m[0].length);
     }
 
-    // First tag that names a configured category wins; the others are
-    // left in the text untouched.
+    // First @marker that names a configured category wins; any other
+    // @word is left in the text untouched.
     if (categoryNames && categoryNames.length > 0) {
-        TAG_RE.lastIndex = 0;
+        CAT_RE.lastIndex = 0;
         var t;
-        while ((t = TAG_RE.exec(rest)) !== null) {
+        while ((t = CAT_RE.exec(rest)) !== null) {
             var name = t[2];
             if (categoryNames.indexOf(name) !== -1) {
                 category = name;
@@ -128,12 +151,11 @@ function splitBody(body, categoryNames) {
 }
 
 // The one place a task line is written. Token order is fixed here:
-// text, #category, !N, done date -- matching what the Tasks plugin
-// produces, so a vault can be read by either.
+// text, @category, !N, done date.
 function renderTask(t) {
     var s = t.indent + t.bullet + " [" + t.mark + "]";
     var body = t.text;
-    if (t.category) body += (body ? " " : "") + "#" + t.category;
+    if (t.category) body += (body ? " " : "") + "@" + t.category;
     if (t.importance !== null && t.importance !== undefined)
         body += (body ? " " : "") + "!" + t.importance;
     if (t.doneDate) body += (body ? " " : "") + DONE_MARK + " " + t.doneDate;
@@ -562,10 +584,60 @@ function stampUndated(text, cfg, dateStr) {
     return { ok: true, text: text, changed: changed };
 }
 
-// Renaming a category rewrites the tag on every task that carries it,
-// and only that tag: a tag that merely starts with the same letters is
-// left alone, and tags inside prose stay put because only task lines
-// are touched.
+// ---------------------------------------------------------------------
+// one-off migration from the old #tag marker
+// ---------------------------------------------------------------------
+
+function escapeRe(x) { return x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+// Finds "#name" on a task line where name is a configured category and
+// the line has no @category yet. Only exact whole-token matches, so
+// "#jobsearch" is never mistaken for "#job", and only task lines, so a
+// #tag in a note stays a tag.
+function scanLegacyTags(text, cfg, rewrite) {
+    var names = catNames(cfg);
+    var doc = parseDoc(text, names);
+    var count = 0;
+
+    for (var i = 0; i < doc.tasks.length; i++) {
+        var t = doc.tasks[i];
+        // Already carries an @category: nothing to convert, and a line
+        // with both should keep the one it is actually using.
+        if (t.category !== null) continue;
+
+        var line = doc.lines[t.line];
+        for (var k = 0; k < names.length; k++) {
+            var re = new RegExp("(^|[ \t])" + LEGACY_PREFIX + escapeRe(names[k])
+                                + "(?=[ \t]|$)");
+            var m = re.exec(line);
+            if (!m) continue;
+            count++;
+            if (rewrite) {
+                doc.lines[t.line] = line.slice(0, m.index) + m[1] + "@" + names[k]
+                                  + line.slice(m.index + m[0].length);
+            }
+            break;
+        }
+    }
+    return { count: count, text: rewrite ? joinLines(doc) : text };
+}
+
+function needsTagMigration(text, cfg) {
+    return scanLegacyTags(text, cfg, false).count > 0;
+}
+
+// Rewrites every configured category's #tag to @tag, in one pass, and
+// touches nothing else -- importance, done dates, notes, sub-tasks and
+// any #tag that is not a category are all left exactly as they were.
+function migrateTags(text, cfg) {
+    var r = scanLegacyTags(text, cfg, true);
+    return { ok: true, text: r.text, count: r.count };
+}
+
+// Renaming a category rewrites the marker on every task that carries
+// it, and only that one: a category whose name merely starts with the
+// same letters is left alone, and anything inside prose stays put
+// because only task lines are touched.
 function renameCategory(text, oldName, newName, cfg) {
     var names = catNames(cfg);
     if (names.indexOf(oldName) === -1) names = names.concat([oldName]);

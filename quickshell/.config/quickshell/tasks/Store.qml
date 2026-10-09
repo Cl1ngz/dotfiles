@@ -40,6 +40,9 @@ Item {
     // Set once per session when the dashboard stamps phone ticks, so
     // the UI can say what it silently changed on your behalf.
     property int stampedCount: 0
+    // How many "#category" markers were converted to "@category" on
+    // this open. See Parse.migrateTags for why the marker changed.
+    property int migratedCount: 0
 
     // Not named `changed`: QML generates <prop>Changed signals for every
     // property, and a bare `changed` invites a collision with one.
@@ -218,6 +221,7 @@ Item {
                 case "delete":   r = Parse.deleteTask(fresh, rmw.args.raw, store.config); break;
                 case "add":      r = Parse.addTask(fresh, rmw.args.fields, store.config); break;
                 case "stamp":    r = Parse.stampUndated(fresh, store.config); break;
+                case "migrate":  r = Parse.migrateTags(fresh, store.config); break;
                 case "rename":
                     r = Parse.renameCategory(fresh, rmw.args.from, rmw.args.to, store.config);
                     break;
@@ -251,6 +255,17 @@ Item {
                     store.reparse();
                     store.refreshed();
                     return;
+                }
+
+                if (rmw.op === "migrate") {
+                    store.migratedCount = r.count;
+                    if (r.count === 0) {
+                        store.busy = false;
+                        store.tasksText = fresh;
+                        store.reparse();
+                        store.refreshed();
+                        return;
+                    }
                 }
 
                 if (rmw.op === "stamp") {
@@ -302,6 +317,7 @@ Item {
     function edit(raw, fields)    { run("edit", { raw: raw, fields: fields }); }
     function add(fields)          { run("add", { fields: fields }); }
     function stamp()              { run("stamp", {}); }
+    function migrate()            { run("migrate", {}); }
     function renameCategory(a, b) { run("rename", { from: a, to: b }); }
 
     // Save the settings view's config, rewriting any renamed category's
@@ -326,9 +342,21 @@ Item {
         reload();
     }
 
+    // Startup chores, one per refresh so each gets a clean read of the
+    // file rather than racing the other's write.
+    //   1. convert any leftover #category markers to @category
+    //   2. date anything ticked on the phone
+    property bool migratedOnce: false
     property bool stampedOnce: false
+
     onRefreshed: {
-        if (!stampedOnce && loaded && !busy) {
+        if (!loaded || busy) return;
+
+        if (!migratedOnce) {
+            migratedOnce = true;
+            if (Parse.needsTagMigration(tasksText, config)) { migrate(); return; }
+        }
+        if (!stampedOnce) {
             stampedOnce = true;
             if (needsStamp) stamp();
         }

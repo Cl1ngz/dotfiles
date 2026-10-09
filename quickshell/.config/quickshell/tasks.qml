@@ -381,6 +381,18 @@ PanelWindow {
             }
 
             Text {
+                visible: taskStore.migratedCount > 0
+                width: parent.width
+                text: "Converted " + taskStore.migratedCount + " category marker"
+                    + (taskStore.migratedCount === 1 ? "" : "s")
+                    + " from #name to @name, so Obsidian stops indexing them as tags."
+                wrapMode: Text.WordWrap
+                font.family: "JetBrainsMono Nerd Font"
+                font.pixelSize: 10
+                color: Colors.textFaint
+            }
+
+            Text {
                 visible: taskStore.stampedCount > 0
                 width: parent.width
                 text: "Dated " + taskStore.stampedCount + " task"
