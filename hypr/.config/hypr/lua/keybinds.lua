@@ -15,6 +15,8 @@ hl.bind(mainMod .. " + SHIFT + X", hl.dsp.exec_cmd("quickshell -p ~/.config/quic
 hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("quickshell -p ~/.config/quickshell/launcher.qml"))
 hl.bind("ALT + V", hl.dsp.exec_cmd("quickshell -p ~/.config/quickshell/clipboard.qml"))
 
+hl.bind(mainMod .. " + T", hl.dsp.exec_cmd("quickshell -p ~/.config/quickshell/tasks.qml"))
+
 -- █   █ █ █▄ █ █▀▄ ▄▀▄ █   █   █▄ ▄█ ▄▀▄ █▄ █ ▄▀▄ ▄▀  █▄ ▄█ ██▀ █▄ █ ▀█▀
 -- ▀▄▀▄▀ █ █ ▀█ █▄▀ ▀▄▀ ▀▄▀▄▀   █ ▀ █ █▀█ █ ▀█ █▀█ ▀▄█ █ ▀ █ █▄▄ █ ▀█  █
 hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd("kitty"))
