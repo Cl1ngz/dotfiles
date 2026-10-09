@@ -48,3 +48,4 @@ gst-libav
 syncthing
 fuse2
 hyprsunset
+hyprpicker

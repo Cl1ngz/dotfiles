@@ -103,3 +103,13 @@ hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"))
 hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"))
 hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"))
 hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"))
+
+-- █▀▀ █▀█ █▀█ █▀▄▀█   ▀█ █▀█ █▀█ █▀▄▀█
+-- ▄▄█ █▄█ █▄█ █░▀░█   █▄ █▄█ █▄█ █░▀░█
+hl.bind(mainMod .. " + L", hl.dsp.exec_cmd(custom_scripts .. "/zoom toggle"))
+hl.bind(mainMod .. " + CTRL + o", hl.dsp.exec_cmd(custom_scripts .. "/zoom out"))
+hl.bind(mainMod .. " + CTRL + i", hl.dsp.exec_cmd(custom_scripts .. "/zoom in"))
+-- hl.bind(mainMod .. " + CTRL + 0", hl.dsp.exec_cmd(custom_scripts .. "/zoom reset"))
+--
+hl.bind(mainMod .. " + SHIFT + z", hl.dsp.exec_cmd("quickshell -p ~/.config/quickshell/colorpicker.qml"))
+hl.bind(mainMod .. " + SHIFT + c", hl.dsp.exec_cmd("hyprpicker -a -f hex"))
