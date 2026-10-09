@@ -23,7 +23,7 @@ Rectangle {
     height: 26
     radius: 7
     color: open ? Colors.surface1
-         : mouse.containsMouse ? Colors.surface0 : "transparent"
+         : btnHov.hovered ? Colors.surface0 : "transparent"
     border.width: 1
     border.color: open ? Qt.alpha(Colors.accent, 0.6) : Colors.outline
     Behavior on color { ColorAnimation { duration: 120 } }
@@ -65,11 +65,9 @@ Rectangle {
         color: Colors.textFaint
     }
 
-    MouseArea {
-        id: mouse
-        anchors.fill: parent
-        hoverEnabled: true
+    HoverHandler {
+        id: btnHov
         cursorShape: Qt.PointingHandCursor
-        onClicked: btn.toggled()
     }
+    TapHandler { onTapped: btn.toggled() }
 }

@@ -571,7 +571,7 @@ PanelWindow {
                     // the tint, which a flat fill would have swallowed.
                     color: {
                         if (!rowItem.isTask) return "transparent";
-                        const hovered = rowMouse.containsMouse || rowItem.editing
+                        const hovered = rowHover.hovered || rowItem.editing
                                         || rowItem.confirming;
                         if (rowItem.task.importance !== null) {
                             // Done and cancelled rows are faded: their
@@ -606,12 +606,12 @@ PanelWindow {
                         opacity: rowItem.mode === "open" ? 1 : 0.4
                     }
 
-                    MouseArea {
-                        id: rowMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        z: -1
-                    }
+                    // A HoverHandler, not a hoverEnabled MouseArea:
+                    // a MouseArea here loses hover the instant the
+                    // cursor crosses onto a button inside it, and the
+                    // buttons are shown BECAUSE the row is hovered.
+                    // That fed back on itself and flickered.
+                    HoverHandler { id: rowHover }
 
                     Column {
                         id: rowCol
@@ -635,7 +635,7 @@ PanelWindow {
                                 radius: 5
                                 color: "transparent"
                                 border.width: 1
-                                border.color: rowItem.vanishing || boxMouse.containsMouse
+                                border.color: rowItem.vanishing || boxHover.hovered
                                     ? Colors.accent
                                     : rowItem.mode === "open"
                                         ? Colors.outline : Qt.alpha(Colors.outline, 0.6)
@@ -652,7 +652,7 @@ PanelWindow {
                                         ? Colors.textFaint : Colors.accent
                                     opacity: full ? 1
                                            : rowItem.mode === "cancelled" ? 0.35
-                                           : boxMouse.containsMouse ? 0.5 : 0
+                                           : boxHover.hovered ? 0.5 : 0
                                     Behavior on opacity { NumberAnimation { duration: 120 } }
                                     Behavior on width {
                                         NumberAnimation { duration: 150; easing.type: Easing.OutBack }
@@ -660,12 +660,12 @@ PanelWindow {
                                     Behavior on radius { NumberAnimation { duration: 150 } }
                                 }
 
-                                MouseArea {
-                                    id: boxMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
+                                HoverHandler {
+                                    id: boxHover
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
+                                }
+                                TapHandler {
+                                    onTapped: {
                                         if (rowItem.mode === "open")
                                             root.act(rowItem.task.raw, "tick");
                                         else if (rowItem.mode === "done")
@@ -733,8 +733,16 @@ PanelWindow {
                                 anchors.right: parent.right
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: 1
-                                visible: rowMouse.containsMouse || rowItem.editing
-                                         || rowItem.confirming
+                                // Always laid out, only faded. Hiding
+                                // it with `visible` changed the width
+                                // available to the text and the
+                                // category pill, so everything in the
+                                // row jumped sideways on hover.
+                                readonly property bool shown:
+                                    rowHover.hovered || rowItem.editing || rowItem.confirming
+                                opacity: shown ? 1 : 0
+                                enabled: shown
+                                Behavior on opacity { NumberAnimation { duration: 110 } }
 
                                 TinyBtn {
                                     visible: rowItem.mode === "open"

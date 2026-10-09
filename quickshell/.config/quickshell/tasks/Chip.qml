@@ -13,7 +13,7 @@ Rectangle {
     implicitHeight: 24
     radius: 12
     color: active ? Qt.alpha(tint, 0.22)
-         : chipMouse.containsMouse ? Colors.surface1 : Colors.surface0
+         : chipHov.hovered ? Colors.surface1 : Colors.surface0
     border.width: active ? 1 : 0
     border.color: Qt.alpha(tint, 0.6)
     Behavior on color { ColorAnimation { duration: 120 } }
@@ -27,10 +27,11 @@ Rectangle {
         font.weight: chip.active ? Font.DemiBold : Font.Normal
         color: chip.active ? chip.tint : Colors.textDim
     }
-    MouseArea {
-        id: chipMouse
-        anchors.fill: parent
-        hoverEnabled: true
-        onClicked: chip.clicked()
+    // Handlers rather than a hoverEnabled MouseArea, so a chip sitting
+    // on top of something hoverable does not steal the hover from it.
+    HoverHandler {
+        id: chipHov
+        cursorShape: Qt.PointingHandCursor
     }
+    TapHandler { onTapped: chip.clicked() }
 }
