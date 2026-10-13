@@ -1,13 +1,12 @@
-import QtQuick
-import qs
-
 // A one-of-many picker that does not grow with the list.
-//
 // Chips laid out in a Flow are fine for five importance levels and
 // hopeless for fifty categories: the picker becomes taller than the
 // thing it belongs to, the add row pushes the task list off the card,
 // and the same wall of chips appears again inside every open editor.
-//
+
+import QtQuick
+import qs
+
 // So: a compact trigger showing the current value, and an expansion
 // with a search box and a scrolling list. It expands INLINE rather
 // than floating. A floating popup would be clipped by the card and by
@@ -24,57 +23,70 @@ Item {
     property bool open: false
     // Shown on the trigger before the value, e.g. "category".
     property string prefix: ""
-
-    signal toggled()
-    signal picked(var value)
-
-    implicitHeight: col.implicitHeight
-    height: implicitHeight
-
-    onOpenChanged: if (open) search.focusInput(); else search.text = "";
-
-    function labelFor(v) {
-        if (v === null || v === undefined) return placeholder;
-        return "" + v;
-    }
-    function colorFor(v) {
-        for (const o of options) if (o.name === v) return o.color ?? Colors.textFaint;
-        return Colors.textFaint;
-    }
-
     readonly property var filtered: {
         const q = search.text.toLowerCase().trim();
-        if (q === "") return options;
+        if (q === "")
+            return options;
+
         // Prefix matches first: typing "ho" should put "home" above
         // "household chores" even though both match.
         const pre = [];
         const sub = [];
         for (const o of options) {
             const n = o.name.toLowerCase();
-            if (n.startsWith(q)) pre.push(o);
-            else if (n.indexOf(q) !== -1) sub.push(o);
+            if (n.startsWith(q))
+                pre.push(o);
+            else if (n.indexOf(q) !== -1)
+                sub.push(o);
         }
         return pre.concat(sub);
     }
 
+    signal toggled()
+    signal picked(var value)
+
+    function labelFor(v) {
+        if (v === null || v === undefined)
+            return placeholder;
+
+        return "" + v;
+    }
+
+    function colorFor(v) {
+        for (const o of options) if (o.name === v) {
+            return o.color ?? Colors.textFaint;
+        }
+        return Colors.textFaint;
+    }
+
+    implicitHeight: col.implicitHeight
+    height: implicitHeight
+    onOpenChanged: {
+        if (open) {
+            search.focusInput();
+        } else {
+            search.text = "";
+        }
+    }
+
     Column {
+        // ---- trigger ---------------------------------------------------
+        // ---- expansion -------------------------------------------------
+
         id: col
+
         width: parent.width
         spacing: 6
 
-        // ---- trigger ---------------------------------------------------
-
         Rectangle {
             id: trigger
+
             width: parent.width
             height: 26
             radius: 7
-            color: picker.open ? Colors.surface1
-                 : trigMouse.containsMouse ? Colors.surface0 : "transparent"
+            color: picker.open ? Colors.surface1 : trigMouse.containsMouse ? Colors.surface0 : "transparent"
             border.width: 1
             border.color: picker.open ? Qt.alpha(Colors.accent, 0.6) : Colors.outline
-            Behavior on color { ColorAnimation { duration: 120 } }
-            Behavior on border.color { ColorAnimation { duration: 120 } }
 
             Row {
                 anchors.left: parent.left
@@ -90,6 +102,7 @@ Item {
                     radius: 4
                     color: picker.colorFor(picker.current)
                 }
+
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     visible: picker.prefix !== ""
@@ -98,6 +111,7 @@ Item {
                     font.pixelSize: 10
                     color: Colors.textFaint
                 }
+
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     text: picker.labelFor(picker.current)
@@ -105,6 +119,7 @@ Item {
                     font.pixelSize: 11
                     color: picker.current === null ? Colors.textFaint : Colors.textMain
                 }
+
             }
 
             Text {
@@ -119,14 +134,28 @@ Item {
 
             MouseArea {
                 id: trigMouse
+
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: picker.toggled()
             }
-        }
 
-        // ---- expansion -------------------------------------------------
+            Behavior on color {
+                ColorAnimation {
+                    duration: 120
+                }
+
+            }
+
+            Behavior on border.color {
+                ColorAnimation {
+                    duration: 120
+                }
+
+            }
+
+        }
 
         Rectangle {
             visible: picker.open
@@ -139,6 +168,7 @@ Item {
 
             Column {
                 id: body
+
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.top: parent.top
@@ -147,6 +177,7 @@ Item {
 
                 Field {
                     id: search
+
                     width: parent.width
                     fontSize: 11
                     placeholder: "filter…"
@@ -155,6 +186,7 @@ Item {
                     onSubmitted: {
                         if (picker.filtered.length > 0)
                             picker.picked(picker.filtered[0].name);
+
                     }
                 }
 
@@ -166,6 +198,7 @@ Item {
                     height: 24
                     radius: 6
                     color: noneMouse.containsMouse ? Colors.surface1 : "transparent"
+
                     Text {
                         anchors.left: parent.left
                         anchors.leftMargin: 8
@@ -175,17 +208,21 @@ Item {
                         font.pixelSize: 11
                         color: picker.current === null ? Colors.accent : Colors.textFaint
                     }
+
                     MouseArea {
                         id: noneMouse
+
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: picker.picked(null)
                     }
+
                 }
 
                 ListView {
                     id: optList
+
                     width: parent.width
                     // Capped and scrolling: fifty categories must not
                     // make this taller than the card.
@@ -196,16 +233,18 @@ Item {
 
                     delegate: Rectangle {
                         id: optRow
+
                         required property var modelData
+                        readonly property bool chosen: picker.current === modelData.name
+
                         width: optList.width
                         height: 24
                         radius: 6
-                        readonly property bool chosen: picker.current === modelData.name
-                        color: optMouse.containsMouse ? Colors.surface1
-                             : chosen ? Qt.alpha(Colors.accent, 0.12) : "transparent"
+                        color: optMouse.containsMouse ? Colors.surface1 : chosen ? Qt.alpha(Colors.accent, 0.12) : "transparent"
 
                         Rectangle {
                             id: dot
+
                             anchors.left: parent.left
                             anchors.leftMargin: 8
                             anchors.verticalCenter: parent.verticalCenter
@@ -214,6 +253,7 @@ Item {
                             radius: 4
                             color: optRow.modelData.color ?? Colors.textFaint
                         }
+
                         Text {
                             anchors.left: dot.right
                             anchors.leftMargin: 8
@@ -227,14 +267,18 @@ Item {
                             font.weight: optRow.chosen ? Font.DemiBold : Font.Normal
                             color: optRow.chosen ? Colors.accent : Colors.textMain
                         }
+
                         MouseArea {
                             id: optMouse
+
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: picker.picked(optRow.modelData.name)
                         }
+
                     }
+
                 }
 
                 Text {
@@ -245,7 +289,11 @@ Item {
                     font.pixelSize: 10
                     color: Colors.textFaint
                 }
+
             }
+
         }
+
     }
+
 }

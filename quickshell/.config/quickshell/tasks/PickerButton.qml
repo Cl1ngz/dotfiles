@@ -1,10 +1,10 @@
-import QtQuick
-import qs
-
 // The trigger half of a picker. The list half is a single popup that
 // lives at card level (see tasks.qml): one popup, positioned against
 // whichever trigger is active.
-//
+
+import QtQuick
+import qs
+
 // Splitting it this way is the whole point. When each picker carried
 // its own expanding list, the list was a child of the add row, so
 // opening it made the add row taller than the card and the options
@@ -22,15 +22,13 @@ Rectangle {
 
     height: 26
     radius: 7
-    color: open ? Colors.surface1
-         : btnHov.hovered ? Colors.surface0 : "transparent"
+    color: open ? Colors.surface1 : btnHov.hovered ? Colors.surface0 : "transparent"
     border.width: 1
     border.color: open ? Qt.alpha(Colors.accent, 0.6) : Colors.outline
-    Behavior on color { ColorAnimation { duration: 120 } }
-    Behavior on border.color { ColorAnimation { duration: 120 } }
 
     Rectangle {
         id: dot
+
         anchors.left: parent.left
         anchors.leftMargin: 9
         anchors.verticalCenter: parent.verticalCenter
@@ -56,6 +54,7 @@ Rectangle {
 
     Text {
         id: caret
+
         anchors.right: parent.right
         anchors.rightMargin: 9
         anchors.verticalCenter: parent.verticalCenter
@@ -67,7 +66,26 @@ Rectangle {
 
     HoverHandler {
         id: btnHov
+
         cursorShape: Qt.PointingHandCursor
     }
-    TapHandler { onTapped: btn.toggled() }
+
+    TapHandler {
+        onTapped: btn.toggled()
+    }
+
+    Behavior on color {
+        ColorAnimation {
+            duration: 120
+        }
+
+    }
+
+    Behavior on border.color {
+        ColorAnimation {
+            duration: 120
+        }
+
+    }
+
 }

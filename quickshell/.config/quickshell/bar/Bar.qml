@@ -7,22 +7,29 @@ import qs.bar
 PanelWindow {
     id: bar
 
+    implicitHeight: 42
+    exclusiveZone: implicitHeight
+    WlrLayershell.layer: WlrLayer.Top
+    WlrLayershell.namespace: "quickshell-bar"
+    color: "transparent"
+
     anchors {
         top: true
         left: true
         right: true
     }
-    implicitHeight: 42
-    exclusiveZone: implicitHeight
 
-    WlrLayershell.layer: WlrLayer.Top
-    WlrLayershell.namespace: "quickshell-bar"
+    NotifPopups {
+    }
 
-    color: "transparent"
+    Osd {
+    }
 
-    NotifPopups {}
-    Osd {}
-    AudioPanel { id: audioPanel; anchorItem: speakerPill }
+    AudioPanel {
+        id: audioPanel
+
+        anchorItem: speakerPill
+    }
 
     // ---------------- LEFT ----------------
     Island {
@@ -30,13 +37,32 @@ PanelWindow {
         anchors.leftMargin: 5
         anchors.verticalCenter: parent.verticalCenter
 
-        PowerBtn { anchors.verticalCenter: parent.verticalCenter }
-        Sep {}
-        Workspaces {}
-        Sep {}
-        StayAwake { barWindow: bar; anchors.verticalCenter: parent.verticalCenter }
-        PowerProfile { anchors.verticalCenter: parent.verticalCenter }
-        BtStatus { anchors.verticalCenter: parent.verticalCenter }
+        PowerBtn {
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        Sep {
+        }
+
+        Workspaces {
+        }
+
+        Sep {
+        }
+
+        StayAwake {
+            barWindow: bar
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        PowerProfile {
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        BtStatus {
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
     }
 
     // ---------------- CENTER ----------------
@@ -46,7 +72,12 @@ PanelWindow {
         // Hide the island when mpd has nothing, like waybar.empty.
         visible: mpd.track !== "" || mpd.state !== ""
 
-        Mpd { id: mpd; anchors.verticalCenter: parent.verticalCenter }
+        Mpd {
+            id: mpd
+
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
     }
 
     // ---------------- RIGHT ----------------
@@ -55,17 +86,62 @@ PanelWindow {
         anchors.rightMargin: 5
         anchors.verticalCenter: parent.verticalCenter
 
-        Battery { id: battery; anchors.verticalCenter: parent.verticalCenter }
-        Sep { visible: battery.visible && backlight.visible }
-        Backlight { id: backlight; anchors.verticalCenter: parent.verticalCenter }
-        AudioPill { isSink: false; panel: audioPanel; anchors.verticalCenter: parent.verticalCenter }
-        AudioPill { id: speakerPill; isSink: true; panel: audioPanel; anchors.verticalCenter: parent.verticalCenter }
-        NetStatus { anchors.verticalCenter: parent.verticalCenter }
-        SysStats {}
-        Sep {}
-        NotifBell { anchors.verticalCenter: parent.verticalCenter }
-        ClockPill { anchors.verticalCenter: parent.verticalCenter }
-        Sep { visible: trayWidget.visible }
-        Tray { id: trayWidget }
+        Battery {
+            id: battery
+
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        Sep {
+            visible: battery.visible && backlight.visible
+        }
+
+        Backlight {
+            id: backlight
+
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        AudioPill {
+            isSink: false
+            panel: audioPanel
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        AudioPill {
+            id: speakerPill
+
+            isSink: true
+            panel: audioPanel
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        NetStatus {
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        SysStats {
+        }
+
+        Sep {
+        }
+
+        NotifBell {
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        ClockPill {
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        Sep {
+            visible: trayWidget.visible
+        }
+
+        Tray {
+            id: trayWidget
+        }
+
     }
+
 }

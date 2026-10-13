@@ -1,19 +1,54 @@
+// Wallpaper picker. Standalone like the powermenu: bind a key to
+//   quickshell -p ~/.config/quickshell/wallpapers.qml
+// Folders under ~/Pictures/Wallpapers are categories (tabs). Selecting
+// an image runs ~/.local/bin/swall.sh <path> and quits -- the matugen
+// pipeline downstream of swall.sh is untouched.
+
 import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import qs
 
-// Wallpaper picker. Standalone like the powermenu: bind a key to
-//   quickshell -p ~/.config/quickshell/wallpapers.qml
-// Folders under ~/Pictures/Wallpapers are categories (tabs). Selecting
-// an image runs ~/.local/bin/swall.sh <path> and quits -- the matugen
-// pipeline downstream of swall.sh is untouched.
-//
 // No thumbnail cache: Image.sourceSize makes Qt decode each file at
 // thumbnail size directly, lazily, per visible cell.
 PanelWindow {
+    // ---- data --------------------------------------------------------
+    // ---- UI ----------------------------------------------------------
+
     id: pickerWindow
+
+    property var entries: [] // [{ cat, path, name }]
+    property var categories: [] // unique folder names, sorted
+    property int catIndex: 0
+    readonly property string currentCategory: categories.length > 0 ? categories[catIndex] : ""
+    readonly property var currentList: entries.filter((e) => {
+        return e.cat === currentCategory;
+    })
+
+    function cycleCategory(delta) {
+        if (categories.length === 0)
+            return ;
+
+        catIndex = (catIndex + delta + categories.length) % categories.length;
+        grid.currentIndex = 0;
+    }
+
+    function applySelected() {
+        if (grid.currentIndex < 0 || grid.currentIndex >= currentList.length)
+            return ;
+
+        const path = currentList[grid.currentIndex].path;
+        // Path passed as an argument, not spliced into the command
+        // string, so spaces and quotes in filenames are safe.
+        Quickshell.execDetached(["sh", "-c", 'exec "$HOME/.local/bin/swall.sh" "$1"', "--", path]);
+        Qt.quit();
+    }
+
+    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+    WlrLayershell.namespace: "quickshell-wallpapers"
+    color: "transparent"
 
     anchors {
         top: true
@@ -22,53 +57,28 @@ PanelWindow {
         right: true
     }
 
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-    WlrLayershell.namespace: "quickshell-wallpapers"
-
-    color: "transparent"
-
-    // ---- data --------------------------------------------------------
-
-    property var entries: []        // [{ cat, path, name }]
-    property var categories: []     // unique folder names, sorted
-    property int catIndex: 0
-
-    readonly property string currentCategory:
-        categories.length > 0 ? categories[catIndex] : ""
-    readonly property var currentList:
-        entries.filter((e) => e.cat === currentCategory)
-
-    function cycleCategory(delta) {
-        if (categories.length === 0) return;
-        catIndex = (catIndex + delta + categories.length) % categories.length;
-        grid.currentIndex = 0;
-    }
-
-    function applySelected() {
-        if (grid.currentIndex < 0 || grid.currentIndex >= currentList.length) return;
-        const path = currentList[grid.currentIndex].path;
-        // Path passed as an argument, not spliced into the command
-        // string, so spaces and quotes in filenames are safe.
-        Quickshell.execDetached(["sh", "-c", 'exec "$HOME/.local/bin/swall.sh" "$1"', "--", path]);
-        Qt.quit();
-    }
-
     Process {
         id: listProcess
+
         running: true
-        command: ["sh", "-c",
-            'find "$HOME/Pictures/Wallpapers" -mindepth 2 -maxdepth 2 -type f ' +
-            '\\( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \\) | sort']
+        command: ["sh", "-c", 'find "$HOME/Pictures/Wallpapers" -mindepth 2 -maxdepth 2 -type f ' + '\\( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \\) | sort']
+
         stdout: StdioCollector {
             onStreamFinished: {
                 const found = [];
-                const cats = {};
+                const cats = {
+                };
                 for (const line of text.split('\n')) {
-                    if (line.trim() === "") continue;
+                    if (line.trim() === "")
+                        continue;
+
                     const parts = line.split('/');
                     const cat = parts[parts.length - 2];
-                    found.push({ cat: cat, path: line, name: parts[parts.length - 1] });
+                    found.push({
+                        "cat": cat,
+                        "path": line,
+                        "name": parts[parts.length - 1]
+                    });
                     cats[cat] = true;
                 }
                 pickerWindow.entries = found;
@@ -76,50 +86,48 @@ PanelWindow {
                 pickerWindow.catIndex = 0;
             }
         }
-    }
 
-    // ---- UI ----------------------------------------------------------
+    }
 
     FocusScope {
         anchors.fill: parent
         focus: true
         Component.onCompleted: forceActiveFocus()
-
         Keys.onPressed: (event) => {
             switch (event.key) {
             case Qt.Key_Escape:
                 Qt.quit();
                 event.accepted = true;
-                return;
+                return ;
             case Qt.Key_Tab:
                 pickerWindow.cycleCategory(1);
                 event.accepted = true;
-                return;
+                return ;
             case Qt.Key_Backtab:
                 pickerWindow.cycleCategory(-1);
                 event.accepted = true;
-                return;
+                return ;
             case Qt.Key_Return:
             case Qt.Key_Enter:
                 pickerWindow.applySelected();
                 event.accepted = true;
-                return;
+                return ;
             case Qt.Key_Left:
                 grid.moveCurrentIndexLeft();
                 event.accepted = true;
-                return;
+                return ;
             case Qt.Key_Right:
                 grid.moveCurrentIndexRight();
                 event.accepted = true;
-                return;
+                return ;
             case Qt.Key_Up:
                 grid.moveCurrentIndexUp();
                 event.accepted = true;
-                return;
+                return ;
             case Qt.Key_Down:
                 grid.moveCurrentIndexDown();
                 event.accepted = true;
-                return;
+                return ;
             }
         }
 
@@ -131,6 +139,7 @@ PanelWindow {
 
         Rectangle {
             id: card
+
             anchors.centerIn: parent
             implicitWidth: 960
             implicitHeight: 640
@@ -138,15 +147,17 @@ PanelWindow {
             color: Colors.base
             border.width: 1
             border.color: Colors.outline
-
             opacity: 0
             scale: 0.975
-            Component.onCompleted: { opacity = 1; scale = 1; }
-            Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-            Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack; easing.overshoot: 1.05 } }
+            Component.onCompleted: {
+                opacity = 1;
+                scale = 1;
+            }
 
             // Swallow clicks so they don't reach the dismiss backdrop.
-            MouseArea { anchors.fill: parent }
+            MouseArea {
+                anchors.fill: parent
+            }
 
             Column {
                 anchors.fill: parent
@@ -177,6 +188,7 @@ PanelWindow {
 
                             Rectangle {
                                 id: tab
+
                                 required property string modelData
                                 required property int index
                                 readonly property bool active: pickerWindow.catIndex === index
@@ -184,13 +196,11 @@ PanelWindow {
                                 width: tabLabel.implicitWidth + 22
                                 height: 26
                                 radius: 13
-                                color: tab.active ? Colors.accent
-                                     : tabMouse.containsMouse ? Colors.surface1
-                                     : Qt.alpha(Colors.textMain, 0.08)
-                                Behavior on color { ColorAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                                color: tab.active ? Colors.accent : tabMouse.containsMouse ? Colors.surface1 : Qt.alpha(Colors.textMain, 0.08)
 
                                 Text {
                                     id: tabLabel
+
                                     anchors.centerIn: parent
                                     text: tab.modelData
                                     font.family: "JetBrainsMono Nerd Font"
@@ -201,6 +211,7 @@ PanelWindow {
 
                                 MouseArea {
                                     id: tabMouse
+
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     onClicked: {
@@ -208,18 +219,30 @@ PanelWindow {
                                         grid.currentIndex = 0;
                                     }
                                 }
+
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 150
+                                        easing.type: Easing.OutCubic
+                                    }
+
+                                }
+
                             }
+
                         }
+
                     }
+
                 }
 
                 // ---- thumbnail grid ----
                 GridView {
                     id: grid
+
                     width: parent.width
                     height: parent.height - 30 - 20 - 2 * 14
                     clip: true
-
                     cellWidth: Math.floor(width / 3)
                     cellHeight: Math.floor(cellWidth * 9 / 16) + 8
                     model: pickerWindow.currentList
@@ -237,6 +260,7 @@ PanelWindow {
 
                     delegate: Item {
                         id: cell
+
                         required property var modelData
                         required property int index
                         readonly property bool selected: grid.currentIndex === index
@@ -246,17 +270,15 @@ PanelWindow {
 
                         Rectangle {
                             id: frame
+
                             anchors.fill: parent
                             anchors.margins: 5
                             radius: 10
                             color: Colors.mantle
                             border.width: 2
                             border.color: cell.selected ? Colors.accent : "transparent"
-                            scale: cell.selected ? 1.0 : 0.97
+                            scale: cell.selected ? 1 : 0.97
                             clip: true
-
-                            Behavior on border.color { ColorAnimation { duration: 140; easing.type: Easing.OutCubic } }
-                            Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
 
                             Image {
                                 anchors.fill: parent
@@ -269,7 +291,15 @@ PanelWindow {
                                 // thumbnail cache.
                                 sourceSize.width: 640
                                 opacity: status === Image.Ready ? 1 : 0
-                                Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: 220
+                                        easing.type: Easing.OutCubic
+                                    }
+
+                                }
+
                             }
 
                             // Name strip on hover/selection.
@@ -280,7 +310,6 @@ PanelWindow {
                                 height: 22
                                 color: Qt.alpha(Colors.base, 0.85)
                                 opacity: cell.selected || cellMouse.containsMouse ? 1 : 0
-                                Behavior on opacity { NumberAnimation { duration: 140 } }
 
                                 Text {
                                     anchors.verticalCenter: parent.verticalCenter
@@ -294,17 +323,45 @@ PanelWindow {
                                     font.pixelSize: 10
                                     color: Colors.textDim
                                 }
+
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: 140
+                                    }
+
+                                }
+
                             }
+
+                            Behavior on border.color {
+                                ColorAnimation {
+                                    duration: 140
+                                    easing.type: Easing.OutCubic
+                                }
+
+                            }
+
+                            Behavior on scale {
+                                NumberAnimation {
+                                    duration: 160
+                                    easing.type: Easing.OutCubic
+                                }
+
+                            }
+
                         }
 
                         MouseArea {
                             id: cellMouse
+
                             anchors.fill: parent
                             hoverEnabled: true
                             onEntered: grid.currentIndex = cell.index
                             onClicked: pickerWindow.applySelected()
                         }
+
                     }
+
                 }
 
                 // ---- footer hints ----
@@ -312,14 +369,23 @@ PanelWindow {
                     spacing: 14
 
                     Repeater {
-                        model: [
-                            { k: "↑↓←→", d: "navigate" },
-                            { k: "⇥", d: "next category" },
-                            { k: "⏎", d: "apply" },
-                            { k: "esc", d: "close" }
-                        ]
+                        model: [{
+                            "k": "↑↓←→",
+                            "d": "navigate"
+                        }, {
+                            "k": "⇥",
+                            "d": "next category"
+                        }, {
+                            "k": "⏎",
+                            "d": "apply"
+                        }, {
+                            "k": "esc",
+                            "d": "close"
+                        }]
+
                         delegate: Row {
                             required property var modelData
+
                             spacing: 5
 
                             Rectangle {
@@ -328,15 +394,19 @@ PanelWindow {
                                 implicitHeight: 17
                                 radius: 4
                                 color: Colors.surface0
+
                                 Text {
                                     id: hintKey
+
                                     anchors.centerIn: parent
                                     text: parent.parent.modelData.k
                                     font.family: "JetBrainsMono Nerd Font"
                                     font.pixelSize: 10
                                     color: Colors.textDim
                                 }
+
                             }
+
                             Text {
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: parent.modelData.d
@@ -344,10 +414,34 @@ PanelWindow {
                                 font.pixelSize: 10
                                 color: Colors.textFaint
                             }
+
                         }
+
                     }
+
                 }
+
             }
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 160
+                    easing.type: Easing.OutCubic
+                }
+
+            }
+
+            Behavior on scale {
+                NumberAnimation {
+                    duration: 200
+                    easing.type: Easing.OutBack
+                    easing.overshoot: 1.05
+                }
+
+            }
+
         }
+
     }
+
 }

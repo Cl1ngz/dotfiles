@@ -1,12 +1,12 @@
+// Toast popups, top-right under the bar.
+
 import QtQuick
 import Quickshell
+import Quickshell.Services.Notifications
 import Quickshell.Wayland
 import Quickshell.Widgets
-import Quickshell.Services.Notifications
 import qs
 
-// Toast popups, top-right under the bar.
-//
 // The Repeater runs over the server's ObjectModel, which updates
 // incrementally -- delegates persist across changes. Whether a toast is
 // *shown* is a per-delegate binding on Notifs.popupIds, and its height,
@@ -16,10 +16,6 @@ import qs
 PanelWindow {
     id: popupWindow
 
-    anchors {
-        top: true
-        right: true
-    }
     margins.right: 8
     margins.top: 6
     implicitWidth: 380
@@ -31,13 +27,18 @@ PanelWindow {
     // height term only keeps it mapped while a collapse animation is
     // still playing out after the last popup is removed.
     visible: Notifs.popupList.length > 0 || popupColumn.implicitHeight > 1
-
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "quickshell-notif-popups"
     color: "transparent"
 
+    anchors {
+        top: true
+        right: true
+    }
+
     Column {
         id: popupColumn
+
         width: parent.width
         // Spacing lives inside each delegate's height so collapsed
         // toasts contribute zero, not ghost gaps.
@@ -48,24 +49,19 @@ PanelWindow {
 
             Item {
                 id: slot
-                required property var modelData
 
-                readonly property bool critical:
-                    modelData.urgency === NotificationUrgency.Critical
-                readonly property bool shown:
-                    entered && Notifs.popupIds.indexOf(modelData.id) !== -1
+                required property var modelData
+                readonly property bool critical: modelData.urgency === NotificationUrgency.Critical
+                readonly property bool shown: entered && Notifs.popupIds.indexOf(modelData.id) !== -1
                 // False for one tick after creation so the entrance
                 // animates up from zero instead of starting at full size.
                 property bool entered: false
                 property real progress: 1
 
                 Component.onCompleted: entered = true
-
                 width: popupColumn.width
                 implicitHeight: shown ? toast.implicitHeight + 8 : 0
                 clip: true
-
-                Behavior on implicitHeight { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
 
                 // Auto-hide countdown; critical toasts never start it,
                 // and hovering pauses it.
@@ -77,22 +73,24 @@ PanelWindow {
                     duration: 6000
                     running: slot.shown && !slot.critical
                     paused: running && hoverMouse.containsMouse
-                    onStopped: if (slot.progress <= 0.01) Notifs.hidePopup(slot.modelData.id)
+                    onStopped: {
+                        if (slot.progress <= 0.01) {
+                            Notifs.hidePopup(slot.modelData.id);
+                        }
+                    }
                 }
 
                 Rectangle {
                     id: toast
+
                     width: parent.width
                     implicitHeight: toastContent.implicitHeight + 24
                     radius: 12
                     color: Colors.base
                     border.width: 1
                     border.color: slot.critical ? Qt.alpha(Colors.danger, 0.6) : Colors.outline
-
                     opacity: slot.shown ? 1 : 0
                     x: slot.shown ? 0 : 36
-                    Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-                    Behavior on x { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
 
                     // Urgency stripe, same language as the list rows.
                     Rectangle {
@@ -106,6 +104,7 @@ PanelWindow {
 
                     MouseArea {
                         id: hoverMouse
+
                         anchors.fill: parent
                         hoverEnabled: true
                         // Click tucks it away; it stays in the center.
@@ -114,6 +113,7 @@ PanelWindow {
 
                     Column {
                         id: toastContent
+
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
@@ -136,6 +136,7 @@ PanelWindow {
                                     anchors.verticalCenter: parent.verticalCenter
                                     source: Quickshell.iconPath(slot.modelData.appIcon, true)
                                 }
+
                                 Text {
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: slot.modelData.appName
@@ -143,6 +144,7 @@ PanelWindow {
                                     font.pixelSize: 10
                                     color: slot.critical ? Colors.danger : Colors.textFaint
                                 }
+
                             }
 
                             // Full dismiss; only offered while hovering.
@@ -153,17 +155,32 @@ PanelWindow {
                                 font.pixelSize: 11
                                 opacity: hoverMouse.containsMouse || closeMouse.containsMouse ? 1 : 0
                                 color: closeMouse.containsMouse ? Colors.danger : Colors.textFaint
-                                Behavior on opacity { NumberAnimation { duration: 130 } }
-                                Behavior on color { ColorAnimation { duration: 120 } }
 
                                 MouseArea {
                                     id: closeMouse
+
                                     anchors.fill: parent
                                     anchors.margins: -6
                                     hoverEnabled: true
                                     onClicked: Notifs.dismiss(slot.modelData)
                                 }
+
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: 130
+                                    }
+
+                                }
+
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 120
+                                    }
+
+                                }
+
                             }
+
                         }
 
                         Text {
@@ -199,14 +216,15 @@ PanelWindow {
 
                                 Rectangle {
                                     required property var modelData
+
                                     implicitWidth: actionLabel.implicitWidth + 20
                                     implicitHeight: 24
                                     radius: 7
                                     color: actionMouse.containsMouse ? Colors.surface1 : Colors.surface0
-                                    Behavior on color { ColorAnimation { duration: 120 } }
 
                                     Text {
                                         id: actionLabel
+
                                         anchors.centerIn: parent
                                         text: parent.modelData.text
                                         font.family: "JetBrainsMono Nerd Font"
@@ -216,6 +234,7 @@ PanelWindow {
 
                                     MouseArea {
                                         id: actionMouse
+
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         onClicked: {
@@ -223,9 +242,20 @@ PanelWindow {
                                             Notifs.dismiss(slot.modelData);
                                         }
                                     }
+
+                                    Behavior on color {
+                                        ColorAnimation {
+                                            duration: 120
+                                        }
+
+                                    }
+
                                 }
+
                             }
+
                         }
+
                     }
 
                     // Remaining-time bar along the bottom; freezes with
@@ -240,8 +270,37 @@ PanelWindow {
                         radius: 1
                         color: Qt.alpha(Colors.accent, 0.5)
                     }
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 180
+                            easing.type: Easing.OutCubic
+                        }
+
+                    }
+
+                    Behavior on x {
+                        NumberAnimation {
+                            duration: 220
+                            easing.type: Easing.OutCubic
+                        }
+
+                    }
+
                 }
+
+                Behavior on implicitHeight {
+                    NumberAnimation {
+                        duration: 220
+                        easing.type: Easing.OutCubic
+                    }
+
+                }
+
             }
+
         }
+
     }
+
 }

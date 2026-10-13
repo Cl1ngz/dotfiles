@@ -1,47 +1,55 @@
-import QtQuick
-import Quickshell
-import Quickshell.Widgets
-import Quickshell.Wayland
-import qs
-
 // App launcher. Standalone, bind a key to:
 //   quickshell -p ~/.config/quickshell/launcher.qml
-//
+
+import QtQuick
+import Quickshell
+import Quickshell.Wayland
+import Quickshell.Widgets
+import qs
+
 // Apps come from Quickshell's native DesktopEntries service (the parsed
 // .desktop database) -- no rofi, no scanning, and entry.execute() spawns
 // the app properly detached. Type to search, arrows to move, Enter to
 // launch. Focus lives permanently in the search field; the list never
 // takes it, so there is exactly one owner of the current row.
 PanelWindow {
-    id: launcherWindow
-
-    anchors {
-        top: true
-        bottom: true
-        left: true
-        right: true
-    }
-
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-    WlrLayershell.namespace: "quickshell-launcher"
-
-    color: "transparent"
-
     // ---- display names -----------------------------------------------
-
     // The row title is the .desktop FILE name, not the Name= field.
     // Name= is whatever upstream wrote there, so gimp.desktop reads
     // "GNU Image Manipulation Program" -- the filename is the name the
     // app is actually known by, uniformly, with no per-app rules.
-    //
+    // ---- search / filtering ------------------------------------------
+    // ---- UI ----------------------------------------------------------
+
+    id: launcherWindow
+
+    readonly property var results: {
+        const q = searchField.text.toLowerCase().trim();
+        return DesktopEntries.applications.values.filter((e) => {
+            return !e.noDisplay;
+        }).map((e) => {
+            return ({
+                "entry": e,
+                "score": scoreEntry(e, q)
+            });
+        }).filter((r) => {
+            return r.score >= 0;
+        }).sort((a, b) => {
+            return a.score - b.score || launcherWindow.shortName(a.entry).localeCompare(launcherWindow.shortName(b.entry));
+        }).map((r) => {
+            return r.entry;
+        });
+    }
+
     // Reverse-DNS ids (flatpak, org.gimp.GIMP) are shown by their last
     // segment only: the org./com. prefix is packaging bookkeeping, and
     // dropping it is the same rule applied to the same kind of string,
     // not a special case.
     function shortName(entry) {
         const id = (entry.id ?? "").replace(/\.desktop$/, "");
-        if (id === "") return entry.name ?? "";
+        if (id === "")
+            return entry.name ?? "";
+
         const slug = id.split(".").pop();
         return slug === "" ? id : slug;
     }
@@ -51,12 +59,14 @@ PanelWindow {
     function subName(entry) {
         const full = entry.name ?? "";
         const desc = entry.comment ?? entry.genericName ?? "";
-        if (full === "") return desc;
-        if (desc === "" || full.toLowerCase() === desc.toLowerCase()) return full;
+        if (full === "")
+            return desc;
+
+        if (desc === "" || full.toLowerCase() === desc.toLowerCase())
+            return full;
+
         return full + "  ·  " + desc;
     }
-
-    // ---- search / filtering ------------------------------------------
 
     // Rank: title prefix, then title word-start, then substring in
     // either the title or Name=, then Keywords=, then description.
@@ -64,53 +74,68 @@ PanelWindow {
     // "gimp" and "manipulation" both land on the same row. -1 filters
     // out. Word boundaries in a filename are - and _, not spaces.
     function scoreEntry(entry, q) {
-        if (q === "") return 10;
+        if (q === "")
+            return 10;
 
         const title = shortName(entry).toLowerCase();
         const full = (entry.name ?? "").toLowerCase();
+        if (title.startsWith(q))
+            return 0;
 
-        if (title.startsWith(q)) return 0;
-        if (full.startsWith(q)) return 1;
-        if (title.includes("-" + q) || title.includes("_" + q)
-            || full.includes(" " + q)) return 2;
-        if (title.includes(q) || full.includes(q)) return 3;
+        if (full.startsWith(q))
+            return 1;
+
+        if (title.includes("-" + q) || title.includes("_" + q) || full.includes(" " + q))
+            return 2;
+
+        if (title.includes(q) || full.includes(q))
+            return 3;
 
         const kw = (entry.keywords ?? []).join(" ").toLowerCase();
-        if (kw.includes(q)) return 4;
+        if (kw.includes(q))
+            return 4;
 
         const desc = (entry.comment ?? entry.genericName ?? "").toLowerCase();
-        if (desc.includes(q)) return 5;
+        if (desc.includes(q))
+            return 5;
+
         return -1;
     }
 
-    readonly property var results: {
-        const q = searchField.text.toLowerCase().trim();
-        return DesktopEntries.applications.values
-            .filter((e) => !e.noDisplay)
-            .map((e) => ({ entry: e, score: scoreEntry(e, q) }))
-            .filter((r) => r.score >= 0)
-            .sort((a, b) => a.score - b.score
-                || launcherWindow.shortName(a.entry)
-                       .localeCompare(launcherWindow.shortName(b.entry)))
-            .map((r) => r.entry);
-    }
-
     function launchSelected() {
-        if (appList.currentIndex < 0 || appList.currentIndex >= results.length) return;
+        if (appList.currentIndex < 0 || appList.currentIndex >= results.length)
+            return ;
+
         results[appList.currentIndex].execute();
         Qt.quit();
     }
 
     function moveSelection(delta) {
-        if (results.length === 0) return;
+        if (results.length === 0)
+            return ;
+
         let next = appList.currentIndex + delta;
-        if (next < 0) next = 0;
-        if (next > results.length - 1) next = results.length - 1;
+        if (next < 0)
+            next = 0;
+
+        if (next > results.length - 1)
+            next = results.length - 1;
+
         appList.currentIndex = next;
         appList.positionViewAtIndex(next, ListView.Contain);
     }
 
-    // ---- UI ----------------------------------------------------------
+    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+    WlrLayershell.namespace: "quickshell-launcher"
+    color: "transparent"
+
+    anchors {
+        top: true
+        bottom: true
+        left: true
+        right: true
+    }
 
     // Click outside the card closes.
     MouseArea {
@@ -120,6 +145,7 @@ PanelWindow {
 
     Rectangle {
         id: card
+
         anchors.horizontalCenter: parent.horizontalCenter
         // Upper third rather than dead center: the eye starts at the
         // search field, and results grow downward from it.
@@ -130,18 +156,22 @@ PanelWindow {
         color: Colors.base
         border.width: 1
         border.color: Colors.outline
-
         opacity: 0
         scale: 0.975
-        Component.onCompleted: { opacity = 1; scale = 1; searchField.forceActiveFocus(); }
-        Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-        Behavior on scale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+        Component.onCompleted: {
+            opacity = 1;
+            scale = 1;
+            searchField.forceActiveFocus();
+        }
 
         // Swallow clicks so they don't reach the dismiss backdrop.
-        MouseArea { anchors.fill: parent }
+        MouseArea {
+            anchors.fill: parent
+        }
 
         Column {
             id: cardColumn
+
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
@@ -172,6 +202,7 @@ PanelWindow {
 
                     TextInput {
                         id: searchField
+
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width - 30
                         font.family: "JetBrainsMono Nerd Font"
@@ -179,25 +210,16 @@ PanelWindow {
                         color: Colors.textMain
                         clip: true
                         focus: true
-
                         onTextChanged: appList.currentIndex = results.length > 0 ? 0 : -1
-
-                        Text {
-                            visible: searchField.text === ""
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "Search apps…"
-                            font.family: "JetBrainsMono Nerd Font"
-                            font.pixelSize: 14
-                            color: Colors.textFaint
-                        }
-
                         Keys.onUpPressed: launcherWindow.moveSelection(-1)
                         Keys.onDownPressed: launcherWindow.moveSelection(1)
                         Keys.onPressed: (event) => {
                             switch (event.key) {
                             case Qt.Key_Escape:
-                                if (searchField.text !== "") searchField.text = "";
-                                else Qt.quit();
+                                if (searchField.text !== "")
+                                    searchField.text = "";
+                                else
+                                    Qt.quit();
                                 event.accepted = true;
                                 break;
                             case Qt.Key_Return:
@@ -215,13 +237,26 @@ PanelWindow {
                                 break;
                             }
                         }
+
+                        Text {
+                            visible: searchField.text === ""
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "Search apps…"
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 14
+                            color: Colors.textFaint
+                        }
+
                     }
+
                 }
+
             }
 
             // ---- results ----
             ListView {
                 id: appList
+
                 width: parent.width
                 height: Math.min(contentHeight, 8 * 52)
                 clip: true
@@ -234,8 +269,6 @@ PanelWindow {
                 highlightMoveDuration: 120
                 highlightMoveVelocity: -1
 
-                Behavior on height { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-
                 Text {
                     visible: appList.count === 0
                     anchors.centerIn: parent
@@ -245,8 +278,17 @@ PanelWindow {
                     color: Colors.textFaint
                 }
 
+                Behavior on height {
+                    NumberAnimation {
+                        duration: 160
+                        easing.type: Easing.OutCubic
+                    }
+
+                }
+
                 delegate: Rectangle {
                     id: row
+
                     required property var modelData
                     required property int index
                     // ListView.isCurrentItem only resolves on the delegate
@@ -256,10 +298,7 @@ PanelWindow {
                     width: ListView.view.width
                     height: 50
                     radius: 10
-                    color: row.selected ? Colors.surface0
-                         : rowMouse.containsMouse ? Qt.alpha(Colors.surface0, 0.5)
-                         : "transparent"
-                    Behavior on color { ColorAnimation { duration: 110; easing.type: Easing.OutCubic } }
+                    color: row.selected ? Colors.surface0 : rowMouse.containsMouse ? Qt.alpha(Colors.surface0, 0.5) : "transparent"
 
                     Rectangle {
                         anchors.left: parent.left
@@ -268,7 +307,15 @@ PanelWindow {
                         height: row.selected ? 26 : 0
                         radius: 2
                         color: Colors.accent
-                        Behavior on height { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                        Behavior on height {
+                            NumberAnimation {
+                                duration: 150
+                                easing.type: Easing.OutBack
+                            }
+
+                        }
+
                     }
 
                     Row {
@@ -289,6 +336,7 @@ PanelWindow {
                                 asynchronous: true
                             }
                             // Fallback glyph for entries without an icon.
+
                             Text {
                                 visible: row.modelData.icon === ""
                                 anchors.centerIn: parent
@@ -297,6 +345,7 @@ PanelWindow {
                                 font.pixelSize: 18
                                 color: Colors.textFaint
                             }
+
                         }
 
                         Column {
@@ -313,6 +362,7 @@ PanelWindow {
                                 font.weight: row.selected ? Font.DemiBold : Font.Normal
                                 color: row.selected ? Colors.textMain : Colors.textDim
                             }
+
                             Text {
                                 width: parent.width
                                 visible: text !== ""
@@ -322,17 +372,30 @@ PanelWindow {
                                 font.pixelSize: 10
                                 color: Colors.textFaint
                             }
+
                         }
+
                     }
 
                     MouseArea {
                         id: rowMouse
+
                         anchors.fill: parent
                         hoverEnabled: true
                         onEntered: appList.currentIndex = row.index
                         onClicked: launcherWindow.launchSelected()
                     }
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 110
+                            easing.type: Easing.OutCubic
+                        }
+
+                    }
+
                 }
+
             }
 
             // ---- footer ----
@@ -340,13 +403,20 @@ PanelWindow {
                 spacing: 14
 
                 Repeater {
-                    model: [
-                        { k: "↑↓", d: "navigate" },
-                        { k: "⏎", d: "launch" },
-                        { k: "esc", d: "close" }
-                    ]
+                    model: [{
+                        "k": "↑↓",
+                        "d": "navigate"
+                    }, {
+                        "k": "⏎",
+                        "d": "launch"
+                    }, {
+                        "k": "esc",
+                        "d": "close"
+                    }]
+
                     delegate: Row {
                         required property var modelData
+
                         spacing: 5
 
                         Rectangle {
@@ -355,15 +425,19 @@ PanelWindow {
                             implicitHeight: 17
                             radius: 4
                             color: Colors.surface0
+
                             Text {
                                 id: hintKey
+
                                 anchors.centerIn: parent
                                 text: parent.parent.modelData.k
                                 font.family: "JetBrainsMono Nerd Font"
                                 font.pixelSize: 10
                                 color: Colors.textDim
                             }
+
                         }
+
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             text: parent.modelData.d
@@ -371,10 +445,15 @@ PanelWindow {
                             font.pixelSize: 10
                             color: Colors.textFaint
                         }
+
                     }
+
                 }
 
-                Item { width: 1; height: 1 }
+                Item {
+                    width: 1
+                    height: 1
+                }
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
@@ -383,7 +462,27 @@ PanelWindow {
                     font.pixelSize: 10
                     color: Colors.textFaint
                 }
+
             }
+
         }
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 150
+                easing.type: Easing.OutCubic
+            }
+
+        }
+
+        Behavior on scale {
+            NumberAnimation {
+                duration: 180
+                easing.type: Easing.OutCubic
+            }
+
+        }
+
     }
+
 }

@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
-import Quickshell.Widgets
 import Quickshell.Services.SystemTray
+import Quickshell.Widgets
 import qs
 
 // Native StatusNotifier tray. Left click activates, middle click
@@ -18,6 +18,7 @@ Row {
 
         Item {
             id: trayItem
+
             required property var modelData
 
             anchors.verticalCenter: parent.verticalCenter
@@ -28,12 +29,20 @@ Row {
                 anchors.centerIn: parent
                 implicitSize: 13
                 source: trayItem.modelData.icon
-                opacity: itemMouse.containsMouse ? 1.0 : 0.85
-                Behavior on opacity { NumberAnimation { duration: 120 } }
+                opacity: itemMouse.containsMouse ? 1 : 0.85
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 120
+                    }
+
+                }
+
             }
 
             QsMenuAnchor {
                 id: menuAnchor
+
                 menu: trayItem.modelData.menu
                 anchor.item: trayItem
                 anchor.rect.y: trayItem.height + 6
@@ -41,6 +50,7 @@ Row {
 
             MouseArea {
                 id: itemMouse
+
                 anchors.fill: parent
                 hoverEnabled: true
                 acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
@@ -53,6 +63,9 @@ Row {
                         trayItem.modelData.activate();
                 }
             }
+
         }
+
     }
+
 }

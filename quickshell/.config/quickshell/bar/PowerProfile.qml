@@ -8,7 +8,6 @@ Pill {
     id: profilePill
 
     property string profile: ""
-
     readonly property var icons: ({
         "performance": "󰓅",
         "balanced": "󰾅",
@@ -16,10 +15,7 @@ Pill {
     })
 
     icon: icons[profile] ?? "󰾅"
-    tint: profile === "performance" ? Colors.accent
-        : profile === "power-saver" ? Colors.warn
-        : Colors.textMain
-
+    tint: profile === "performance" ? Colors.accent : profile === "power-saver" ? Colors.warn : Colors.textMain
     onClicked: {
         const order = ["power-saver", "balanced", "performance"];
         const next = order[(order.indexOf(profile) + 1) % order.length];
@@ -29,16 +25,24 @@ Pill {
 
     Process {
         id: getProcess
+
+        function refresh() {
+            running = false;
+            running = true;
+        }
+
         running: true
         command: ["powerprofilesctl", "get"]
+
         stdout: StdioCollector {
             onStreamFinished: profilePill.profile = text.trim()
         }
-        function refresh() { running = false; running = true; }
+
     }
 
     Process {
         id: setProcess
+
         onExited: getProcess.refresh()
     }
 
@@ -50,4 +54,5 @@ Pill {
         running: true
         onTriggered: getProcess.refresh()
     }
+
 }

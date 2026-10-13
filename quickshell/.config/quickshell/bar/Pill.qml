@@ -26,25 +26,11 @@ Rectangle {
     implicitHeight: 28
     implicitWidth: content.implicitWidth + 16
     radius: 12
-
-    // Labels change length (volume %, battery %); glide instead of jumping.
-    Behavior on implicitWidth {
-        NumberAnimation {
-            duration: 200
-            easing.type: Easing.OutCubic
-        }
-    }
-    color: mouse.containsMouse && interactive ? Colors.base : Qt.alpha(Colors.textMain, 0.10)
-
-    Behavior on color {
-        ColorAnimation {
-            duration: 150
-            easing.type: Easing.OutCubic
-        }
-    }
+    color: mouse.containsMouse && interactive ? Colors.base : Qt.alpha(Colors.textMain, 0.1)
 
     Row {
         id: content
+
         anchors.centerIn: parent
         spacing: 5
 
@@ -55,12 +41,16 @@ Rectangle {
             font.family: "JetBrainsMono Nerd Font"
             font.pixelSize: pill.iconSize
             color: pill.tint
+
             Behavior on color {
                 ColorAnimation {
                     duration: 150
                 }
+
             }
+
         }
+
         Text {
             visible: pill.label !== "" && pill.labelVisible
             anchors.verticalCenter: parent.verticalCenter
@@ -69,12 +59,16 @@ Rectangle {
             font.pixelSize: 12
             font.weight: Font.Bold
             color: pill.tint
+
             Behavior on color {
                 ColorAnimation {
                     duration: 150
                 }
+
             }
+
         }
+
     }
 
     // waybar's `box-shadow: inset 0 -2px @red` hover glow.
@@ -85,26 +79,50 @@ Rectangle {
         height: 2
         radius: 1
         color: Colors.accent
+
         Behavior on width {
             NumberAnimation {
                 duration: 180
                 easing.type: Easing.OutCubic
             }
+
         }
+
     }
 
     MouseArea {
         id: mouse
+
         anchors.fill: parent
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-        onClicked: event => {
+        onClicked: (event) => {
             if (pill.toggleableLabel && event.button === Qt.RightButton) {
                 pill.labelVisible = !pill.labelVisible;
-                return;
+                return ;
             }
             pill.clicked(event.button);
         }
-        onWheel: wheel => pill.scrolled(wheel.angleDelta.y > 0 ? 1 : -1)
+        onWheel: (wheel) => {
+            return pill.scrolled(wheel.angleDelta.y > 0 ? 1 : -1);
+        }
     }
+
+    // Labels change length (volume %, battery %); glide instead of jumping.
+    Behavior on implicitWidth {
+        NumberAnimation {
+            duration: 200
+            easing.type: Easing.OutCubic
+        }
+
+    }
+
+    Behavior on color {
+        ColorAnimation {
+            duration: 150
+            easing.type: Easing.OutCubic
+        }
+
+    }
+
 }

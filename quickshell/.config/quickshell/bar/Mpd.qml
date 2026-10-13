@@ -15,17 +15,25 @@ Pill {
     icon: state === "playing" ? "" : "󰝛"
     label: track === "" ? "" : (track.length > 48 ? track.substring(0, 47) + "…" : track)
     tint: state === "playing" ? Colors.textMain : Colors.textFaint
-
     onClicked: (button) => {
-        if (button === Qt.MiddleButton) ctlProcess.run(["mpc", "clear"]);
-        else ctlProcess.run(["mpc", "toggle"]);
+        if (button === Qt.MiddleButton)
+            ctlProcess.run(["mpc", "clear"]);
+        else
+            ctlProcess.run(["mpc", "toggle"]);
     }
 
     Process {
         id: statusProcess
+
+        function refresh() {
+            running = false;
+            running = true;
+        }
+
         running: true
         // Line 1: track (empty when stopped), line 2: "[playing] ..." etc.
         command: ["sh", "-c", "mpc status -f '%artist% - %title%' 2>/dev/null || true"]
+
         stdout: StdioCollector {
             onStreamFinished: {
                 const lines = text.split('\n');
@@ -38,12 +46,18 @@ Pill {
                 }
             }
         }
-        function refresh() { running = false; running = true; }
+
     }
 
     Process {
         id: ctlProcess
-        function run(cmd) { running = false; command = cmd; running = true; }
+
+        function run(cmd) {
+            running = false;
+            command = cmd;
+            running = true;
+        }
+
         onExited: statusProcess.refresh()
     }
 
@@ -53,4 +67,5 @@ Pill {
         running: true
         onTriggered: statusProcess.refresh()
     }
+
 }

@@ -1,8 +1,8 @@
 import QtQuick
 import Quickshell
+import Quickshell.Services.Notifications
 import Quickshell.Wayland
 import Quickshell.Widgets
-import Quickshell.Services.Notifications
 import qs
 
 // Bell pill + notification center. Left click opens the center under
@@ -15,11 +15,10 @@ Pill {
     icon: count > 0 ? "󰂚" : "󰂜"
     label: count > 0 ? String(count) : ""
     tint: count > 0 ? Colors.accent : Colors.textFaint
-
     onClicked: (button) => {
         if (button === Qt.RightButton) {
             Notifs.forgetAll();
-            return;
+            return ;
         }
         overlay.visible = !overlay.visible;
     }
@@ -27,17 +26,18 @@ Pill {
     PanelWindow {
         id: overlay
 
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.namespace: "quickshell-notif-center"
+        color: "transparent"
+        visible: false
+        exclusiveZone: 0
+
         anchors {
             top: true
             bottom: true
             left: true
             right: true
         }
-        WlrLayershell.layer: WlrLayer.Overlay
-        WlrLayershell.namespace: "quickshell-notif-center"
-        color: "transparent"
-        visible: false
-        exclusiveZone: 0
 
         MouseArea {
             anchors.fill: parent
@@ -47,30 +47,27 @@ Pill {
         Rectangle {
             id: panelCard
 
-            x: Math.max(8, Math.min(
-                bellPill.mapToItem(null, 0, 0).x + bellPill.width / 2 - width / 2,
-                overlay.width - width - 8))
+            x: Math.max(8, Math.min(bellPill.mapToItem(null, 0, 0).x + bellPill.width / 2 - width / 2, overlay.width - width - 8))
             // Overlay top edge is already the bottom of the bar.
             y: 6
             width: 380
             implicitHeight: Math.min(centerColumn.implicitHeight + 28, overlay.height - 40)
-
             radius: 14
             color: Colors.base
             border.width: 1
             border.color: Colors.outline
             clip: true
-
             opacity: overlay.visible ? 1 : 0
             scale: overlay.visible ? 1 : 0.97
             transformOrigin: Item.Top
-            Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-            Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
 
-            MouseArea { anchors.fill: parent }
+            MouseArea {
+                anchors.fill: parent
+            }
 
             Column {
                 id: centerColumn
+
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.top: parent.top
@@ -99,10 +96,10 @@ Pill {
                         implicitHeight: 22
                         radius: 7
                         color: clearMouse.containsMouse ? Qt.alpha(Colors.danger, 0.2) : Colors.surface0
-                        Behavior on color { ColorAnimation { duration: 120 } }
 
                         Text {
                             id: clearLabel
+
                             anchors.centerIn: parent
                             text: "Clear all"
                             font.family: "JetBrainsMono Nerd Font"
@@ -112,11 +109,21 @@ Pill {
 
                         MouseArea {
                             id: clearMouse
+
                             anchors.fill: parent
                             hoverEnabled: true
                             onClicked: Notifs.forgetAll()
                         }
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 120
+                            }
+
+                        }
+
                     }
+
                 }
 
                 Text {
@@ -130,6 +137,7 @@ Pill {
                 // ---- the list, newest first ----
                 ListView {
                     id: centerList
+
                     width: parent.width
                     height: Math.min(contentHeight, overlay.height - 140)
                     clip: true
@@ -137,10 +145,17 @@ Pill {
                     boundsBehavior: Flickable.StopAtBounds
                     model: Notifs.records.slice().reverse()
 
-                    Behavior on height { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+                    Behavior on height {
+                        NumberAnimation {
+                            duration: 160
+                            easing.type: Easing.OutCubic
+                        }
+
+                    }
 
                     delegate: Rectangle {
                         id: item
+
                         required property var modelData
                         readonly property bool critical: modelData.urgency === "critical"
                         // Only notifications still held by the server can
@@ -156,6 +171,7 @@ Pill {
 
                         Column {
                             id: itemContent
+
                             anchors.left: parent.left
                             anchors.right: parent.right
                             anchors.top: parent.top
@@ -177,6 +193,7 @@ Pill {
                                         anchors.verticalCenter: parent.verticalCenter
                                         source: Quickshell.iconPath(item.modelData.appIcon, true)
                                     }
+
                                     Text {
                                         anchors.verticalCenter: parent.verticalCenter
                                         text: item.modelData.appName
@@ -184,6 +201,7 @@ Pill {
                                         font.pixelSize: 10
                                         color: item.critical ? Colors.danger : Colors.textFaint
                                     }
+
                                     Text {
                                         anchors.verticalCenter: parent.verticalCenter
                                         text: Notifs.timeAgo(item.modelData.time)
@@ -191,6 +209,7 @@ Pill {
                                         font.pixelSize: 10
                                         color: Colors.textFaint
                                     }
+
                                 }
 
                                 Text {
@@ -199,16 +218,25 @@ Pill {
                                     text: "✕"
                                     font.pixelSize: 11
                                     color: delMouse.containsMouse ? Colors.danger : Colors.textFaint
-                                    Behavior on color { ColorAnimation { duration: 120 } }
 
                                     MouseArea {
                                         id: delMouse
+
                                         anchors.fill: parent
                                         anchors.margins: -6
                                         hoverEnabled: true
                                         onClicked: Notifs.forget(item.modelData)
                                     }
+
+                                    Behavior on color {
+                                        ColorAnimation {
+                                            duration: 120
+                                        }
+
+                                    }
+
                                 }
+
                             }
 
                             Text {
@@ -244,14 +272,15 @@ Pill {
 
                                     Rectangle {
                                         required property var modelData
+
                                         implicitWidth: caLabel.implicitWidth + 18
                                         implicitHeight: 22
                                         radius: 6
                                         color: caMouse.containsMouse ? Colors.surface1 : Colors.surface0
-                                        Behavior on color { ColorAnimation { duration: 120 } }
 
                                         Text {
                                             id: caLabel
+
                                             anchors.centerIn: parent
                                             text: parent.modelData.text
                                             font.family: "JetBrainsMono Nerd Font"
@@ -261,6 +290,7 @@ Pill {
 
                                         MouseArea {
                                             id: caMouse
+
                                             anchors.fill: parent
                                             hoverEnabled: true
                                             onClicked: {
@@ -268,13 +298,46 @@ Pill {
                                                 Notifs.forget(item.modelData);
                                             }
                                         }
+
+                                        Behavior on color {
+                                            ColorAnimation {
+                                                duration: 120
+                                            }
+
+                                        }
+
                                     }
+
                                 }
+
                             }
+
                         }
+
                     }
+
                 }
+
             }
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 140
+                    easing.type: Easing.OutCubic
+                }
+
+            }
+
+            Behavior on scale {
+                NumberAnimation {
+                    duration: 140
+                    easing.type: Easing.OutCubic
+                }
+
+            }
+
         }
+
     }
+
 }
