@@ -1,0 +1,21 @@
+new_tab editor
+cd /home/cl1ngz/Documents/Programing/Python/HotlineMiamibot
+launch zsh -c "source ../.venv/bin/activate && nvim .; exec zsh"
+
+new_tab run
+cd /home/cl1ngz/Documents/Programing/Python/HotlineMiamibot
+launch zsh -c "source ../.venv/bin/activate; exec zsh"
+
+new_tab radar
+cd /home/cl1ngz/Documents/Programing/Python/HotlineMiamibot
+launch zsh -c "source ../.venv/bin/activate; exec zsh"
+
+new_tab helpers
+cd /home/cl1ngz/Documents/Programing/Python/HotlineMiamibot
+launch zsh -c "source ../.venv/bin/activate; exec zsh"
+
+new_tab recorder
+cd /home/cl1ngz/Documents/Programing/Python/HotlineMiamibot
+launch zsh -c "source ../.venv/bin/activate; exec zsh"
+
+focus_tab 0

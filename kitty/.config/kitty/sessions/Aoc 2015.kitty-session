@@ -1,0 +1,13 @@
+new_tab editor
+cd /home/cl1ngz/Documents/Programing/dev/events_itd/AdventOfCode/AdventOfCode_2015/
+launch nvim
+
+new_tab run
+cd /home/cl1ngz/Documents/Programing/dev/events_itd/AdventOfCode/AdventOfCode_2015/
+launch
+
+new_tab run
+cd /home/cl1ngz/Documents/Programing/dev/events_itd/AdventOfCode/AdventOfCode_2015/
+launch
+
+focus_tab 0

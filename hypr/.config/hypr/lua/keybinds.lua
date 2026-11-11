@@ -82,8 +82,13 @@ hl.bind(mainMod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }))
 ---------------------
 --  Monitor Move   --
 ---------------------
-hl.bind(mainMod .. " + CTRL + 1", hl.dsp.exec_cmd(custom_scripts .. "/move_workspace.sh 1"))
-hl.bind(mainMod .. " + CTRL + 2", hl.dsp.exec_cmd(custom_scripts .. "/move_workspace.sh 2"))
+hl.bind(mainMod .. " + CTRL + 1", hl.dsp.exec_cmd("hyprctl dispatch movecurrentworkspacetomonitor +1"))
+hl.bind(mainMod .. " + CTRL + 2", hl.dsp.exec_cmd("hyprctl dispatch movecurrentworkspacetomonitor -1"))
+-- Change workspaces between monitors
+hl.bind(mainMod .. " + CTRL + S", hl.dsp.exec_cmd("hyprctl dispatch swapactiveworkspaces 0 1"))
+-- move the only window not the workspace
+hl.bind(mainMod .. " + CTRL + SHIFT + left", hl.dsp.exec_cmd("hyprctl dispatch movewindow mon:l"))
+hl.bind(mainMod .. " + CTRL + SHIFT + right", hl.dsp.exec_cmd("hyprctl dispatch movewindow mon:r"))
 
 -- █▄ ▄█ █ █ █   ▀█▀ █ █▄ ▄█ ██▀ █▀▄ █ ▄▀▄   █▄▀ ██▀ ▀▄▀ ▄▀▀
 -- █ ▀ █ ▀▄█ █▄▄  █  █ █ ▀ █ █▄▄ █▄▀ █ █▀█   █ █ █▄▄  █  ▄██

@@ -68,3 +68,10 @@ output_path = '~/Documents/Notes/School_Valut/.obsidian/snippets/obsidian-theme.
 input_path = '~/.config/matugen/templates/discord-theme.css'
 output_path = '~/.config/vesktop/themes/discord-theme.css'
 
+[templates.qt5ct]
+input_path = '~/.config/matugen/templates/qtct-colors.conf'
+output_path = '~/.config/qt5ct/colors/matugen.conf'
+
+[templates.qt6ct]
+input_path = '~/.config/matugen/templates/qtct-colors.conf'
+output_path = '~/.config/qt6ct/colors/matugen.conf'

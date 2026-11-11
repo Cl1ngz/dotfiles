@@ -6,7 +6,7 @@ hl.config({
 		kb_layout = "pl,us",
 		kb_variant = "",
 		kb_model = "",
-		kb_options = "grp:win_space_toggle", -- Enabled this for your Super+Space toggle
+		-- kb_options = "grp:win_space_toggle", -- Enabled this for your Super+Space toggle
 		kb_rules = "",
 		numlock_by_default = true,
 
