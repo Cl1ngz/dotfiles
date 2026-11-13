@@ -2,11 +2,44 @@
 local battery_save = false
 
 ---------------------
+--  Per-machine    --
+---------------------
+-- Same config on both laptops; the internal panel differs, so look up
+-- this machine by hostname and use its row.
+local function hostname()
+	local f = io.open("/etc/hostname", "r")
+	if f then
+		local h = f:read("*l")
+		f:close()
+		if h and h ~= "" then
+			return h:lower()
+		end
+	end
+	return (os.getenv("HOSTNAME") or ""):lower()
+end
+
+local machines = {
+	archie = { panel = "1920x1080", hz = 144 },
+	cachi = { panel = "1920x1200", hz = 165 },
+}
+
+local me = machines[hostname()]
+
+local function panel_mode()
+	-- Unknown machine (new install, third laptop): let the panel decide
+	-- instead of forcing a mode it may not support.
+	if not me then
+		return "preferred"
+	end
+	return me.panel .. "@" .. (battery_save and 60 or me.hz)
+end
+
+---------------------
 -- Laptop Monitor  --
 ---------------------
 hl.monitor({
 	output = "eDP-1",
-	mode = battery_save and "1920x1080@60" or "1920x1080@144",
+	mode = panel_mode(),
 	position = "0x0",
 	scale = 1,
 })
