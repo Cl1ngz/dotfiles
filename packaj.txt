@@ -49,3 +49,7 @@ syncthing
 fuse2
 hyprsunset
 hyprpicker
+obs-studio
+kdenlive
+tailscale
+
