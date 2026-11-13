@@ -1,8 +1,3 @@
--- REPLACES -> lua/cl1ngz/plugins/colorscheme.lua
---
--- Both themes installed, toggle between them live, choice persists across
--- restarts.
---
 --   <leader>ut     toggle rose-pine <-> everforest
 --   :ThemeToggle   same thing
 --   :Theme <name>  pick one directly (tab-completes)
@@ -53,10 +48,13 @@ local function apply(name, persist)
 
   themes[name]()
 
-  -- lualine is theme = "auto"; re-running setup makes it re-resolve against
-  -- the colorscheme we just applied.
+  -- A colorscheme change runs `:hi clear`, wiping highlight groups that
+  -- plugins defined at setup time. Nudge every ColorScheme handler (lualine's
+  -- "auto" theme resolver included), then re-apply devicons explicitly since
+  -- everforest's load() may not fire the event.
+  pcall(vim.cmd, "doautocmd ColorScheme")
   pcall(function()
-    require("lualine").setup({ options = { theme = "auto" } })
+    require("nvim-web-devicons").refresh()
   end)
 
   if persist then

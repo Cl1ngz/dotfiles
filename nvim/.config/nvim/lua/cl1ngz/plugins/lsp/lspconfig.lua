@@ -14,10 +14,10 @@ return {
     vim.diagnostic.config({
       signs = {
         text = {
-          [vim.diagnostic.severity.ERROR] = " ",
-          [vim.diagnostic.severity.WARN] = " ",
-          [vim.diagnostic.severity.HINT] = "󰠠 ",
-          [vim.diagnostic.severity.INFO] = " ",
+          [vim.diagnostic.severity.ERROR] = "",
+          [vim.diagnostic.severity.WARN] = "",
+          [vim.diagnostic.severity.HINT] = "",
+          [vim.diagnostic.severity.INFO] = " ",
         },
       },
       virtual_text = {
@@ -31,7 +31,7 @@ return {
         focusable = false,
         style = "minimal",
         border = "rounded",
-        source = true, -- was "always" (removed in 0.11+)
+        source = true,
         header = "",
         prefix = "",
       },
@@ -66,17 +66,26 @@ return {
         keymap.set("n", "<leader>d", vim.diagnostic.open_float, opts)
 
         opts.desc = "Toggle Inlay Hints"
-        keymap.set("n", "<leader>th", function()
+        keymap.set("n", "<leader>uh", function()
           vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
         end, opts)
       end,
     })
 
-    local capabilities = cmp_nvim_lsp.default_capabilities()
+    -- ----------------------------------------------------------------------
+    -- Capabilities
+    -- ----------------------------------------------------------------------
+    -- Start from Neovim's full default set, THEN layer cmp's completion
+    -- additions on top. Using cmp's table alone silently drops file
+    -- watching, workspace folders, and more.
+    local capabilities =
+      vim.tbl_deep_extend("force", vim.lsp.protocol.make_client_capabilities(), cmp_nvim_lsp.default_capabilities())
 
-    -- Applies to every server, mason-installed or not.
     vim.lsp.config("*", { capabilities = capabilities })
 
+    -- ----------------------------------------------------------------------
+    -- lua_ls
+    -- ----------------------------------------------------------------------
     vim.lsp.config("lua_ls", {
       settings = {
         Lua = {
@@ -85,6 +94,46 @@ return {
       },
     })
 
+    -- ----------------------------------------------------------------------
+    -- pyright
+    -- ----------------------------------------------------------------------
+    local function python_path()
+      -- Project venv wins, then an activated venv, then system python.
+      local cwd = vim.fn.getcwd()
+      for _, name in ipairs({ ".venv", "venv", "env" }) do
+        local p = cwd .. "/" .. name .. "/bin/python"
+        if vim.fn.executable(p) == 1 then
+          return p
+        end
+      end
+
+      local venv = os.getenv("VIRTUAL_ENV")
+      if venv and vim.fn.executable(venv .. "/bin/python") == 1 then
+        return venv .. "/bin/python"
+      end
+
+      return vim.fn.exepath("python3") ~= "" and vim.fn.exepath("python3") or "python"
+    end
+
+    vim.lsp.config("pyright", {
+      settings = {
+        python = {
+          pythonPath = python_path(),
+          analysis = {
+            autoSearchPaths = true,
+            useLibraryCodeForTypes = true,
+            -- "workspace" analyses the whole project, so a bad import in a
+            -- file you haven't opened still shows up. Costs more CPU on big
+            -- repos -- drop back to "openFilesOnly" if it drags.
+            diagnosticMode = "workspace",
+          },
+        },
+      },
+    })
+
+    -- ----------------------------------------------------------------------
+    -- qmlls (ships with Qt, not Mason)
+    -- ----------------------------------------------------------------------
     local qmlls_bin = vim.fn.executable("qmlls6") == 1 and "qmlls6"
       or (vim.fn.executable("qmlls") == 1 and "qmlls" or "/usr/lib/qt6/bin/qmlls")
 
