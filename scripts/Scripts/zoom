@@ -1,0 +1,200 @@
+#!/bin/sh
+# Screen zoom for Hyprland, around the cursor.
+#
+#   zoom.sh in | out | reset | toggle | set <factor> | status | mode
+#
+# Hyprland does the magnifying itself through cursor:zoom_factor -- a
+# compositor-level scale of the whole output, GPU-accelerated and free
+# when idle. No process stays running and nothing captures the screen,
+# which is why this is a shell script and not a Quickshell widget.
+#
+# From the Hyprland source (src/config/values/ConfigValues.cpp):
+#   cursor:zoom_factor           float, default 1, min 1, max 10
+#   cursor:zoom_rigid            bool,  default false
+#   cursor:zoom_disable_aa       bool,  default false
+#   cursor:zoom_detached_camera  bool,  default true
+
+STEP=${ZOOM_STEP:-1.35} # multiplicative, so each press feels equal
+MAX=10
+MIN=1
+TOGGLE_TO=${ZOOM_TOGGLE_TO:-2}
+OPT=cursor:zoom_factor
+SUBMAP=${ZOOM_SUBMAP:-zoom}
+
+category=${OPT%%:*}
+key=${OPT##*:}
+
+die() {
+  printf '%s\n' "zoom.sh: $*" >&2
+  exit 1
+}
+
+usage() {
+  cat >&2 <<'USAGE'
+usage: zoom.sh <action>
+
+  in       zoom in one step
+  out      zoom out one step
+  reset    back to 1x
+  toggle   jump to 2x, or back to 1x if already zoomed
+  mode     toggle zoom AND the "zoom" submap, so scroll adjusts it
+  set N    set the factor directly (1 .. 10)
+  status   print the current factor and exit
+
+env: ZOOM_STEP (default 1.35)  ZOOM_TOGGLE_TO (default 2)
+     ZOOM_OSD=1 (notify on every change)  ZOOM_MODE_OSD=0 (silence mode)
+     ZOOM_SUBMAP (default "zoom")  ZOOM_DEBUG=1 (show what each write said)
+USAGE
+  exit 2
+}
+
+# ---- reading ---------------------------------------------------------
+
+# -j gives {"option":..., "float": 1.00, ...}; the plain form gives
+# "float: 1.000000". Both are accepted because the json flag has moved
+# around between releases.
+read_factor() {
+  r=$(hyprctl getoption "$OPT" -j 2>/dev/null)
+  v=$(printf '%s' "$r" | sed -n 's/.*"float"[: ]*\([0-9][0-9.eE+-]*\).*/\1/p' | head -n1)
+  if [ -z "$v" ]; then
+    r=$(hyprctl getoption "$OPT" 2>/dev/null)
+    v=$(printf '%s' "$r" | sed -n 's/.*float:[[:space:]]*\([0-9][0-9.eE+-]*\).*/\1/p' | head -n1)
+  fi
+  RAW=$r
+  printf '%s' "$v"
+}
+
+same() { # same <a> <b> -- float compare with a tolerance
+  awk -v a="$1" -v b="$2" 'BEGIN { d = a - b; if (d < 0) d = -d; exit (d < 0.005 ? 0 : 1) }'
+}
+
+# ---- writing ---------------------------------------------------------
+#
+# WHY THIS VERIFIES INSTEAD OF TRUSTING hyprctl
+#
+# The previous version chose between `keyword` and `eval` by matching
+# hyprctl's prose: it only fell back to eval when keyword replied
+# "keyword can't work with non-legacy parsers. Use eval." An update
+# changed that reply, so the match stopped firing, the eval fallback
+# never ran, and the script cheerfully printed the new factor while
+# nothing on screen changed -- the worst kind of failure, a success
+# message over a no-op.
+#
+# Matching on a program's wording is a guess about a string that is
+# free to change. Reading the value back is a check on the thing we
+# actually care about, and it cannot be wrong. So: try, verify, and
+# only then believe it.
+
+try_eval() {
+  expr="hl.config{ $category = { $key = $1 } }"
+  EVAL_OUT=$(hyprctl eval "$expr" 2>&1)
+  [ "${ZOOM_DEBUG:-0}" = "1" ] && printf 'eval: %s -> %s\n' "$expr" "$EVAL_OUT" >&2
+  return 0
+}
+
+try_keyword() {
+  KEYWORD_OUT=$(hyprctl keyword "$OPT" "$1" 2>&1)
+  [ "${ZOOM_DEBUG:-0}" = "1" ] && printf 'keyword: %s -> %s\n' "$1" "$KEYWORD_OUT" >&2
+  return 0
+}
+
+apply() {
+  want=$1
+
+  # eval first: it is what a Lua config root needs, and a legacy
+  # config ignores a failed eval harmlessly.
+  try_eval "$want"
+  got=$(read_factor)
+  same "$got" "$want" && return 0
+
+  try_keyword "$want"
+  got=$(read_factor)
+  same "$got" "$want" && return 0
+
+  die "could not set $OPT to $want -- it still reads $got.
+     hyprctl eval said:    ${EVAL_OUT:-<nothing>}
+     hyprctl keyword said: ${KEYWORD_OUT:-<nothing>}
+     Run with ZOOM_DEBUG=1 to see both attempts."
+}
+
+# ---- main ------------------------------------------------------------
+
+action=$1
+[ -z "$action" ] && usage
+
+command -v hyprctl >/dev/null 2>&1 || die "hyprctl not found in PATH"
+
+cur=$(read_factor)
+
+if [ -z "$cur" ]; then
+  if ! hyprctl version >/dev/null 2>&1; then
+    die "cannot reach Hyprland (is HYPRLAND_INSTANCE_SIGNATURE set in this shell?)"
+  fi
+  die "could not read $OPT. hyprctl said: ${RAW:-<nothing>}
+     On an older Hyprland the option is misc:cursor_zoom_factor --
+     change OPT at the top of this script."
+fi
+
+if [ "$action" = "status" ]; then
+  printf '%s\n' "$cur"
+  exit 0
+fi
+
+case "$action" in
+in | out | reset | toggle | mode) ;;
+set) [ -n "$2" ] || die "set needs a factor, e.g. zoom.sh set 2" ;;
+*) usage ;;
+esac
+
+new=$(awk -v c="$cur" -v s="$STEP" -v a="$action" -v arg="$2" \
+  -v mx="$MAX" -v mn="$MIN" -v tg="$TOGGLE_TO" 'BEGIN {
+    if      (a == "in")     n = c * s
+    else if (a == "out")    n = c / s
+    else if (a == "reset")  n = 1
+    else if (a == "set")    n = arg + 0
+    else if (a == "toggle" || a == "mode") n = (c > 1.01 ? 1 : tg)
+    if (n > mx) n = mx
+    if (n < mn) n = mn
+    # Snap near-1 back to exactly 1, or dividing out never quite lands
+    # and the screen stays imperceptibly zoomed.
+    if (n < 1.02) n = 1
+    printf "%.4f", n
+}')
+
+apply "$new"
+
+# `mode` moves the submap in lockstep with the zoom, in one command.
+# Two binds on the same key would be two chances to desync -- zoomed
+# but not in the submap, or in the submap with scroll captured and
+# nothing magnified.
+if [ "$action" = "mode" ]; then
+  if same "$new" 1; then
+    hyprctl dispatch submap reset >/dev/null
+    state=off
+  else
+    hyprctl dispatch submap "$SUBMAP" >/dev/null
+    state=on
+  fi
+
+  if [ "${ZOOM_MODE_OSD:-1}" = "1" ] && command -v notify-send >/dev/null 2>&1; then
+    if [ "$state" = "on" ]; then
+      notify-send -h string:x-canonical-private-synchronous:zoom -t 1200 \
+        "Zoom mode" "scroll to adjust, super+L to exit"
+    else
+      notify-send -h string:x-canonical-private-synchronous:zoom -t 900 \
+        "Zoom mode" "off"
+    fi
+  fi
+fi
+
+# The value as actually read back, not the value we hoped for.
+printf '%s\n' "$(read_factor)"
+
+if [ "${ZOOM_OSD:-0}" = "1" ] && command -v notify-send >/dev/null 2>&1; then
+  if same "$new" 1; then
+    notify-send -h string:x-canonical-private-synchronous:zoom -t 900 "Zoom" "off"
+  else
+    notify-send -h string:x-canonical-private-synchronous:zoom -t 900 \
+      "Zoom" "$(awk -v n="$new" 'BEGIN{printf "%.2gx", n}')"
+  fi
+fi
