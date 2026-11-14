@@ -8,44 +8,63 @@
 # is worked out from the hostname. Override with CLIP_PEER=host.
 
 if [ "$1" = recv ]; then
-    # Over ssh there is no Wayland environment, so wl-copy cannot find
-    # the compositor. Find the session's socket ourselves.
-    export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-    if [ -z "$WAYLAND_DISPLAY" ]; then
-        for s in "$XDG_RUNTIME_DIR"/wayland-*; do
-            case "$s" in *.lock) continue ;; esac
-            [ -S "$s" ] && { WAYLAND_DISPLAY=${s##*/}; break; }
-        done
-        export WAYLAND_DISPLAY
-    fi
-    [ -n "$WAYLAND_DISPLAY" ] || { echo "no Wayland session on $(cat /etc/hostname)" >&2; exit 1; }
+  # Over ssh there is no Wayland environment, so wl-copy cannot find
+  # the compositor. Find the session's socket ourselves.
+  export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+  if [ -z "$WAYLAND_DISPLAY" ]; then
+    for s in "$XDG_RUNTIME_DIR"/wayland-*; do
+      case "$s" in *.lock) continue ;; esac
+      [ -S "$s" ] && {
+        WAYLAND_DISPLAY=${s##*/}
+        break
+      }
+    done
+    export WAYLAND_DISPLAY
+  fi
+  [ -n "$WAYLAND_DISPLAY" ] || {
+    echo "no Wayland session on $(cat /etc/hostname)" >&2
+    exit 1
+  }
 
-    # Through a temp file, not straight from stdin: wl-copy stays alive
-    # in the background to serve the clipboard, and if it held the ssh
-    # pipe open the sending side would hang until it exited.
-    tmp=$(mktemp) || exit 1
-    cat > "$tmp"
-    wl-copy < "$tmp" >/dev/null 2>&1
-    rm -f "$tmp"
-    exit 0
+  # Through a temp file, not straight from stdin: wl-copy stays alive
+  # in the background to serve the clipboard, and if it held the ssh
+  # pipe open the sending side would hang until it exited.
+  tmp=$(mktemp) || exit 1
+  cat >"$tmp"
+  wl-copy <"$tmp" >/dev/null 2>&1
+  rm -f "$tmp"
+  exit 0
 fi
 
-note() { command -v notify-send >/dev/null 2>&1 && notify-send -t 1500 "$@"; return 0; }
+note() {
+  command -v notify-send >/dev/null 2>&1 && notify-send -t 1500 "$@"
+  return 0
+}
 
-host=${CLIP_HOST:-$(cat /etc/hostname 2>/dev/null)}
+# Hostname, normalised: /etc/hostname can carry capitals or a stray
+# space/CR, and "Archie " must still match "archie".
+host=${CLIP_HOST:-$(cat /etc/hostname 2>/dev/null || uname -n)}
+host=$(printf '%s' "$host" | tr 'A-Z' 'a-z' | tr -d '[:space:]')
+
+# Left: this machine, by hostname OR ssh name (whichever the hostname
+# turns out to be). Right: the OTHER machine's ssh name, i.e. what
+# `ssh <name>` works with -- that is what gets used below.
 if [ -n "$CLIP_PEER" ]; then
-    peer=$CLIP_PEER
+  peer=$CLIP_PEER
 else
-    case "$host" in
-        archie) peer=cachi ;;
-        cachi)  peer=archie ;;
-    esac
+  case "$host" in
+  archie | asus) peer=omen ;;
+  cachi | omen) peer=asus ;;
+  esac
 fi
-[ -n "$peer" ] || { note -u critical "Clipboard" "don't know the other laptop (set CLIP_PEER)"; exit 1; }
+[ -n "$peer" ] || {
+  note -u critical "Clipboard" "unknown laptop '$host' -- add it to the case in ~/Scripts/clip"
+  exit 1
+}
 
 if ! wl-paste --list-types 2>/dev/null | grep -q '^text/'; then
-    note "Clipboard" "nothing to send: clipboard isn't text"
-    exit 1
+  note "Clipboard" "nothing to send: clipboard isn't text"
+  exit 1
 fi
 
 # BatchMode: never stop to ask for a password -- from a keybind there is
@@ -53,9 +72,9 @@ fi
 # instead of hanging. Relative path: ssh starts in $HOME, and it works
 # whatever the login shell is on the other side.
 if wl-paste --no-newline --type text | ssh -o BatchMode=yes -o ConnectTimeout=3 \
-        "$peer" Documents/Scripts/clip recv; then
-    note "Clipboard" "sent to $peer"
+  "$peer" ~/Scripts/clip recv; then
+  note "Clipboard" "sent to $peer"
 else
-    note -u critical "Clipboard" "could not reach $peer"
-    exit 1
+  note -u critical "Clipboard" "could not reach $peer"
+  exit 1
 fi
