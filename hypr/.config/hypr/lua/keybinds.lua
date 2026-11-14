@@ -14,6 +14,8 @@ hl.bind("Print", hl.dsp.exec_cmd('grim -g "$(slurp)" - | swappy -f -'))
 hl.bind(mainMod .. " + SHIFT + X", hl.dsp.exec_cmd("quickshell -p ~/.config/quickshell/wallpapers.qml "))
 hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("quickshell -p ~/.config/quickshell/launcher.qml"))
 hl.bind("ALT + V", hl.dsp.exec_cmd("quickshell -p ~/.config/quickshell/clipboard.qml"))
+-- clipboard sharing
+hl.bind(mainMod .. " + ALT + C", hl.dsp.exec_cmd(custom_scripts .. "/clip"))
 
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd("quickshell -p ~/.config/quickshell/tasks.qml"))
 
