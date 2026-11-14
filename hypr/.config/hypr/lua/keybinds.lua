@@ -3,7 +3,7 @@
 local mainMod = "SUPER"
 
 -- Helper variables for paths
-local custom_scripts = os.getenv("HOME") .. "/Documents/Scripts"
+local custom_scripts = os.getenv("HOME") .. "/Scripts"
 
 -- █▀ █▀▀ █▀█ █▀▀ █▀▀ █▄░█ █▀ █░█ █▀█ ▀█▀
 -- ▄█ █▄▄ █▀▄ ██▄ ██▄ █░▀█ ▄█ █▀█ █▄█ ░█░

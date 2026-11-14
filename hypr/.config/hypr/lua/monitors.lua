@@ -20,7 +20,7 @@ end
 
 local machines = {
 	archie = { panel = "1920x1080", hz = 144 },
-	cachi = { panel = "1920x1200", hz = 165 },
+	cachi = { panel = "1920x1200", hz = 144 },
 }
 
 local me = machines[hostname()]
