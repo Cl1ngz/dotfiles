@@ -23,7 +23,7 @@ return {
         yaml = { "prettier" },
         markdown = { "prettier" },
         lua = { "stylua" },
-        python = { "isort", "black" },
+        python = { "ruff_organize_imports", "ruff_format" },
         c = { "clang-format" },
         cpp = { "clang-format" },
         rust = { "rustfmt" },

@@ -39,8 +39,8 @@ if [ -n "$CLIP_PEER" ]; then
   peer=$CLIP_PEER
 else
   case "$host" in
-  archie | ausu) peer=omen ;;
-  cachi | omen) peer=ausu ;;
+  archie | asus) peer=omen ;;
+  cachi | omen) peer=asus ;;
   esac
 fi
 
