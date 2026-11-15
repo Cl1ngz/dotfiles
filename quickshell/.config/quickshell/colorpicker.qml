@@ -42,6 +42,14 @@ PanelWindow {
     readonly property color current: Qt.hsva(hue, sat, val, 1)
 
     property string status: ""
+    property bool statusIsError: false
+
+    function say(msg, isError) {
+        root.status = msg;
+        root.statusIsError = isError === true;
+        statusTimer.interval = isError === true ? 4000 : 1600;
+        statusTimer.restart();
+    }
 
     function byte(x) {
         const v = Math.round(Math.max(0, Math.min(1, x)) * 255);
@@ -71,19 +79,10 @@ PanelWindow {
              + "%, " + Math.round(l * 100) + "%)";
     }
 
-    // Hex in, HSV out. Value and saturation of zero leave the hue
-    // undefined mathematically, so the current hue is kept rather than
-    // snapping the bar to red.
-    function setHex(text) {
-        let s = text.trim().replace(/^#/, "");
-        if (s.length === 3)
-            s = s[0] + s[0] + s[1] + s[1] + s[2] + s[2];
-        if (!/^[0-9a-fA-F]{6}$/.test(s)) return false;
-
-        const r = parseInt(s.slice(0, 2), 16) / 255;
-        const g = parseInt(s.slice(2, 4), 16) / 255;
-        const b = parseInt(s.slice(4, 6), 16) / 255;
-
+    // RGB (each 0..1) in, HSV out. Value and saturation of zero leave
+    // the hue undefined mathematically, so the current hue is kept
+    // rather than snapping the bar to red.
+    function setRgb01(r, g, b) {
         const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
         const d = mx - mn;
         root.val = mx;
@@ -93,13 +92,89 @@ PanelWindow {
             else if (mx === g) root.hue = ((b - r) / d + 2) / 6;
             else root.hue = ((r - g) / d + 4) / 6;
         }
+    }
+
+    function setHex(text) {
+        let s = text.trim().replace(/^#/, "");
+        if (s.length === 3)
+            s = s[0] + s[0] + s[1] + s[1] + s[2] + s[2];
+        if (!/^[0-9a-fA-F]{6}$/.test(s)) return false;
+
+        setRgb01(parseInt(s.slice(0, 2), 16) / 255,
+                 parseInt(s.slice(2, 4), 16) / 255,
+                 parseInt(s.slice(4, 6), 16) / 255);
         return true;
+    }
+
+    // The numbers in whatever was typed, so "rgb(30, 144, 255)",
+    // "30 144 255", "30,144,255" and "hsl(210deg 50% 40%)" all read the
+    // same. Each is { v, pct, dot }: dot marks a decimal point, which is
+    // how "0.5" is told apart from "50" for saturation/lightness.
+    function numbersIn(text) {
+        const out = [];
+        const re = /(-?(?:\d+\.?\d*|\.\d+))\s*(%|deg)?/g;
+        let m;
+        while ((m = re.exec(text)) !== null)
+            out.push({ "v": parseFloat(m[1]), "pct": m[2] === "%", "dot": m[1].indexOf(".") !== -1 });
+        return out;
+    }
+
+    // rgb: three numbers 0-255 (or 0-100%). A fourth (alpha) is
+    // accepted and ignored: the picker has no alpha.
+    function setRgb(text) {
+        const n = numbersIn(text);
+        if (n.length !== 3 && n.length !== 4) return false;
+        const ch = n.slice(0, 3).map((x) => x.pct ? x.v / 100 : x.v / 255);
+        if (ch.some((c) => !(c >= 0 && c <= 1))) return false;
+        setRgb01(ch[0], ch[1], ch[2]);
+        return true;
+    }
+
+    // hsl: hue in degrees (wraps), then saturation and lightness as
+    // percent -- "50", "50%", or a fraction like "0.5".
+    function setHsl(text) {
+        const n = numbersIn(text);
+        if (n.length !== 3 && n.length !== 4) return false;
+        const frac = (x) => x.pct ? x.v / 100 : (x.dot && x.v <= 1 ? x.v : x.v / 100);
+        const h = ((n[0].v % 360) + 360) % 360;
+        const s = frac(n[1]);
+        const l = frac(n[2]);
+        if (!(s >= 0 && s <= 1 && l >= 0 && l <= 1)) return false;
+
+        // HSL -> HSV directly, so the hue you typed is the hue you get,
+        // even for a grey where RGB would have thrown it away.
+        const v = l + s * Math.min(l, 1 - l);
+        root.hue = h / 360;
+        root.sat = v === 0 ? 0 : 2 * (1 - l / v);
+        root.val = v;
+        return true;
+    }
+
+    // Any box takes any format: paste "hsl(...)" into the RGB box and it
+    // still works. Bare numbers are read as the box's own format.
+    function setColor(text, kind) {
+        const t = text.trim().toLowerCase();
+        if (t.startsWith("rgb")) return setRgb(t);
+        if (t.startsWith("hsl")) return setHsl(t);
+        if (t.startsWith("#")) return setHex(t);
+        if (kind === "rgb") return setRgb(t);
+        if (kind === "hsl") return setHsl(t);
+        return setHex(t);
+    }
+
+    function commit(row, text, kind) {
+        if (setColor(text, kind)) {
+            row.resync();   // show it in canonical form: "30 144 255" -> "rgb(30, 144, 255)"
+            return;
+        }
+        say(kind === "rgb" ? "rgb: three numbers 0–255, e.g. 30 144 255"
+          : kind === "hsl" ? "hsl: hue 0–360 then two %, e.g. 210 50 40"
+          : "hex: #rrggbb or #rgb", true);
     }
 
     function copy(s) {
         Quickshell.execDetached(["sh", "-c", 'printf %s "$1" | wl-copy', "--", s]);
-        root.status = "copied " + s;
-        statusTimer.restart();
+        say("copied " + s, false);
     }
 
     Timer { id: statusTimer; interval: 1600; onTriggered: root.status = "" }
@@ -134,15 +209,14 @@ PanelWindow {
                 const v = text.trim();
                 if (v !== "" && root.setHex(v)) {
                     root.remember(root.hexText);
-                    root.status = "picked " + root.hexText;
-                    statusTimer.restart();
+                    root.say("picked " + root.hexText, false);
                 }
             }
         }
         stderr: StdioCollector {
             onStreamFinished: {
                 if (text.indexOf("NOHYPRPICKER") !== -1)
-                    root.status = "hyprpicker is not installed — pacman -S hyprpicker";
+                    root.say("hyprpicker is not installed — pacman -S hyprpicker", true);
             }
         }
         onExited: {
@@ -243,13 +317,19 @@ PanelWindow {
         TapHandler { onTapped: btn.clicked() }
     }
 
-    // One row: a read-only value and a copy button. Hex is editable.
+    // One row: a value you can type into (Enter applies it) and a copy
+    // button.
     component ValueRow: Item {
         id: vrow
         property string caption: ""
         property string value: ""
         property bool editable: false
         signal committed(string text)
+
+        // After a successful commit the field still has focus, which is
+        // exactly when it stops following `value` (so typing is not
+        // overwritten). This puts the applied colour back in.
+        function resync() { ti.text = vrow.value; }
 
         height: 30
 
@@ -495,19 +575,29 @@ PanelWindow {
             Rectangle { width: parent.width; height: 1; color: Colors.outline }
 
             ValueRow {
+                id: hexRow
                 width: parent.width
                 caption: "HEX"
                 value: root.hexText
                 editable: true
-                onCommitted: (t) => {
-                    if (!root.setHex(t)) {
-                        root.status = "not a hex colour";
-                        statusTimer.restart();
-                    }
-                }
+                onCommitted: (t) => root.commit(hexRow, t, "hex")
             }
-            ValueRow { width: parent.width; caption: "RGB"; value: root.rgbText }
-            ValueRow { width: parent.width; caption: "HSL"; value: root.hslText }
+            ValueRow {
+                id: rgbRow
+                width: parent.width
+                caption: "RGB"
+                value: root.rgbText
+                editable: true
+                onCommitted: (t) => root.commit(rgbRow, t, "rgb")
+            }
+            ValueRow {
+                id: hslRow
+                width: parent.width
+                caption: "HSL"
+                value: root.hslText
+                editable: true
+                onCommitted: (t) => root.commit(hslRow, t, "hsl")
+            }
 
             Item {
                 width: parent.width
@@ -520,12 +610,13 @@ PanelWindow {
                 Text {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - 140
+                    horizontalAlignment: Text.AlignRight
+                    elide: Text.ElideLeft
                     text: root.status
                     font.family: "JetBrainsMono Nerd Font"
                     font.pixelSize: 10
-                    color: root.status.indexOf("not ") === 0
-                           || root.status.indexOf("hyprpicker") !== -1
-                        ? Colors.danger : Colors.textFaint
+                    color: root.statusIsError ? Colors.danger : Colors.textFaint
                 }
             }
 
