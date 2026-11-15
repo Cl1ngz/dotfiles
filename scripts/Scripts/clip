@@ -7,10 +7,49 @@
 # Same file on both machines (it lives in your dotfiles), so the peer
 # is worked out from the hostname. Override with CLIP_PEER=host.
 
+# -a clip: shows up as "clip" in the notification centre, so it can be
+# ignored on its own. Without -a every script is "notify-send", and
+# ignoring that would silence all of them.
+note() {
+  command -v notify-send >/dev/null 2>&1 || return 0
+  notify-send -a clip -i edit-paste "$@" 2>/dev/null
+  return 0
+}
+
+# One line of what was sent, for the notification body: newlines and
+# tabs flattened, cut to 80 characters, never split mid-character, and
+# &, <, > escaped -- the shell renders the body as markup, so a
+# clipboard holding "<b>" or "a < b" would otherwise come out mangled.
+preview() {
+  full=$(head -c 400 | tr '\n\t\r' '   ' | tr -s ' ' | iconv -f UTF-8 -t UTF-8 -c 2>/dev/null)
+  short=$(printf '%s' "$full" | head -c 80 | iconv -f UTF-8 -t UTF-8 -c 2>/dev/null)
+  [ "${#full}" -gt "${#short}" ] && short="$short…"
+  printf '%s' "$short" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'
+}
+
+# Hostname, normalised: /etc/hostname can carry capitals or a stray
+# space/CR, and "Archie " must still match "archie".
+host=${CLIP_HOST:-$(cat /etc/hostname 2>/dev/null || uname -n)}
+host=$(printf '%s' "$host" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+
+# Left: this machine, by hostname OR ssh name (whichever the hostname
+# turns out to be). Right: the OTHER machine's ssh name, i.e. what
+# `ssh <name>` works with.
+if [ -n "$CLIP_PEER" ]; then
+  peer=$CLIP_PEER
+else
+  case "$host" in
+  archie | ausu) peer=omen ;;
+  cachi | omen) peer=ausu ;;
+  esac
+fi
+
 if [ "$1" = recv ]; then
-  # Over ssh there is no Wayland environment, so wl-copy cannot find
-  # the compositor. Find the session's socket ourselves.
+  # Over ssh there is no session environment: wl-copy cannot find the
+  # compositor and notify-send cannot find the session bus. Point
+  # both at this user's running session.
   export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+  export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$XDG_RUNTIME_DIR/bus}"
   if [ -z "$WAYLAND_DISPLAY" ]; then
     for s in "$XDG_RUNTIME_DIR"/wayland-*; do
       case "$s" in *.lock) continue ;; esac
@@ -22,7 +61,7 @@ if [ "$1" = recv ]; then
     export WAYLAND_DISPLAY
   fi
   [ -n "$WAYLAND_DISPLAY" ] || {
-    echo "no Wayland session on $(cat /etc/hostname)" >&2
+    echo "no Wayland session on $host" >&2
     exit 1
   }
 
@@ -32,49 +71,33 @@ if [ "$1" = recv ]; then
   tmp=$(mktemp) || exit 1
   cat >"$tmp"
   wl-copy <"$tmp" >/dev/null 2>&1
+  # -e (transient): shown as a toast, never kept in the history.
+  note -e "Received from ${peer:-the other laptop}" "$(preview <"$tmp")"
   rm -f "$tmp"
   exit 0
 fi
 
-note() {
-  command -v notify-send >/dev/null 2>&1 && notify-send -t 1500 "$@"
-  return 0
-}
-
-# Hostname, normalised: /etc/hostname can carry capitals or a stray
-# space/CR, and "Archie " must still match "archie".
-host=${CLIP_HOST:-$(cat /etc/hostname 2>/dev/null || uname -n)}
-host=$(printf '%s' "$host" | tr 'A-Z' 'a-z' | tr -d '[:space:]')
-
-# Left: this machine, by hostname OR ssh name (whichever the hostname
-# turns out to be). Right: the OTHER machine's ssh name, i.e. what
-# `ssh <name>` works with -- that is what gets used below.
-if [ -n "$CLIP_PEER" ]; then
-  peer=$CLIP_PEER
-else
-  case "$host" in
-  archie | asus) peer=omen ;;
-  cachi | omen) peer=asus ;;
-  esac
-fi
-[ -n "$peer" ] || {
-  note -u critical "Clipboard" "unknown laptop '$host' -- add it to the case in ~/Scripts/clip"
+if [ -z "$peer" ]; then
+  note "Clipboard not sent" "Unknown laptop '$host'. Add it to the case in ~/Scripts/clip."
   exit 1
-}
+fi
 
 if ! wl-paste --list-types 2>/dev/null | grep -q '^text/'; then
-  note "Clipboard" "nothing to send: clipboard isn't text"
+  note -e "Clipboard not sent" "Nothing to send: the clipboard isn't text."
   exit 1
 fi
 
 # BatchMode: never stop to ask for a password -- from a keybind there is
 # nobody to answer. ConnectTimeout: a sleeping laptop fails in 3s
 # instead of hanging. Relative path: ssh starts in $HOME, and it works
-# whatever the login shell is on the other side.
-if wl-paste --no-newline --type text | ssh -o BatchMode=yes -o ConnectTimeout=3 \
-  "$peer" ~/Scripts/clip recv; then
-  note "Clipboard" "sent to $peer"
+# whatever the login shell is on the other side. ssh's own error text
+# is kept so the notification can say WHY it failed.
+if err=$(wl-paste --no-newline --type text | ssh -o BatchMode=yes -o ConnectTimeout=3 \
+  "$peer" Scripts/clip recv 2>&1); then
+  note -e "Sent to $peer" "$(wl-paste --no-newline --type text | preview)"
 else
-  note -u critical "Clipboard" "could not reach $peer"
+  # Not transient: a failed send is worth finding in the history.
+  why=$(printf '%s\n' "$err" | tail -n 1 | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
+  note -i dialog-error "Couldn't send to $peer" "${why:-ssh failed (asleep or offline?)}"
   exit 1
 fi

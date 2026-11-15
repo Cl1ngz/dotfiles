@@ -13,6 +13,12 @@ import qs
 // opacity and slide are all Behaviors on that binding. That is what
 // makes appearing, dismissing, and the stack collapsing all animate
 // instead of snapping: nothing is ever rebuilt, only re-bound.
+//
+// Hover is read with HoverHandlers. The old hoverEnabled MouseAreas
+// took hover from each other: pointing at the close button or an
+// action took it off the toast, so the countdown un-paused and the
+// toast could vanish under the cursor while you were reaching for a
+// button. Handlers share hover; clicks stay on plain MouseAreas.
 PanelWindow {
     id: popupWindow
 
@@ -52,6 +58,8 @@ PanelWindow {
 
                 required property var modelData
                 readonly property bool critical: modelData.urgency === NotificationUrgency.Critical
+                // Repeats of this exact message while its toast was up.
+                readonly property int repeats: Notifs.toastCount(modelData.id)
                 readonly property bool shown: entered && Notifs.popupIds.indexOf(modelData.id) !== -1
                 // False for one tick after creation so the entrance
                 // animates up from zero instead of starting at full size.
@@ -72,7 +80,7 @@ PanelWindow {
                     to: 0
                     duration: 6000
                     running: slot.shown && !slot.critical
-                    paused: running && hoverMouse.containsMouse
+                    paused: running && toastHover.hovered
                     onStopped: {
                         if (slot.progress <= 0.01) {
                             Notifs.hidePopup(slot.modelData.id);
@@ -102,11 +110,12 @@ PanelWindow {
                         color: slot.critical ? Colors.danger : Colors.accent
                     }
 
-                    MouseArea {
-                        id: hoverMouse
+                    HoverHandler {
+                        id: toastHover
+                    }
 
+                    MouseArea {
                         anchors.fill: parent
-                        hoverEnabled: true
                         // Click tucks it away; it stays in the center.
                         onClicked: Notifs.hidePopup(slot.modelData.id)
                     }
@@ -139,42 +148,78 @@ PanelWindow {
 
                                 Text {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    text: slot.modelData.appName
+                                    // The sending script's name for plain
+                                    // notify-send calls (see Notifs.appNameOf).
+                                    text: Notifs.appNameOf(slot.modelData)
                                     font.family: "JetBrainsMono Nerd Font"
                                     font.pixelSize: 10
                                     color: slot.critical ? Colors.danger : Colors.textFaint
                                 }
 
+                                // Same message again: one toast that counts
+                                // up instead of a column of copies.
+                                Rectangle {
+                                    visible: slot.repeats > 1
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    implicitWidth: repeatLabel.implicitWidth + 10
+                                    implicitHeight: 14
+                                    radius: 7
+                                    color: Qt.alpha(Colors.accent, 0.18)
+
+                                    Text {
+                                        id: repeatLabel
+
+                                        anchors.centerIn: parent
+                                        text: "\u00d7" + slot.repeats
+                                        font.family: "JetBrainsMono Nerd Font"
+                                        font.pixelSize: 9
+                                        font.weight: Font.DemiBold
+                                        color: Colors.accent
+                                    }
+
+                                }
+
                             }
 
                             // Full dismiss; only offered while hovering.
-                            Text {
+                            Item {
                                 anchors.right: parent.right
+                                anchors.rightMargin: -6
                                 anchors.verticalCenter: parent.verticalCenter
-                                text: "✕"
-                                font.pixelSize: 11
-                                opacity: hoverMouse.containsMouse || closeMouse.containsMouse ? 1 : 0
-                                color: closeMouse.containsMouse ? Colors.danger : Colors.textFaint
+                                width: 22
+                                height: 22
+                                opacity: toastHover.hovered ? 1 : 0
+                                enabled: toastHover.hovered
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "✕"
+                                    font.pixelSize: 11
+                                    color: closeHover.hovered ? Colors.danger : Colors.textFaint
+
+                                    Behavior on color {
+                                        ColorAnimation {
+                                            duration: 120
+                                        }
+
+                                    }
+
+                                }
+
+                                HoverHandler {
+                                    id: closeHover
+
+                                    cursorShape: Qt.PointingHandCursor
+                                }
 
                                 MouseArea {
-                                    id: closeMouse
-
                                     anchors.fill: parent
-                                    anchors.margins: -6
-                                    hoverEnabled: true
                                     onClicked: Notifs.dismiss(slot.modelData)
                                 }
 
                                 Behavior on opacity {
                                     NumberAnimation {
                                         duration: 130
-                                    }
-
-                                }
-
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: 120
                                     }
 
                                 }
@@ -220,7 +265,7 @@ PanelWindow {
                                     implicitWidth: actionLabel.implicitWidth + 20
                                     implicitHeight: 24
                                     radius: 7
-                                    color: actionMouse.containsMouse ? Colors.surface1 : Colors.surface0
+                                    color: actionHover.hovered ? Colors.surface1 : Colors.surface0
 
                                     Text {
                                         id: actionLabel
@@ -232,11 +277,14 @@ PanelWindow {
                                         color: Colors.textMain
                                     }
 
-                                    MouseArea {
-                                        id: actionMouse
+                                    HoverHandler {
+                                        id: actionHover
 
+                                        cursorShape: Qt.PointingHandCursor
+                                    }
+
+                                    MouseArea {
                                         anchors.fill: parent
-                                        hoverEnabled: true
                                         onClicked: {
                                             parent.modelData.invoke();
                                             Notifs.dismiss(slot.modelData);
