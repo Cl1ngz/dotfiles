@@ -590,7 +590,7 @@ PanelWindow {
                 editable: true
                 onCommitted: (t) => root.commit(rgbRow, t, "rgb")
             }
-            ValueRow {
+            ValueRow { 
                 id: hslRow
                 width: parent.width
                 caption: "HSL"

@@ -71,6 +71,11 @@ Item {
     //   2. date anything ticked on the phone
     property bool migratedOnce: false
     property bool stampedOnce: false
+    // Changes asked for while another is still being written. Queued,
+    // not refused: from the keyboard it is easy to press space on one
+    // task and space on the next before the first write has landed, and
+    // the second keypress must not be silently thrown away.
+    property var opQueue: []
 
     // Not named `changed`: QML generates <prop>Changed signals for every
     // property, and a bare `changed` invites a collision with one.
@@ -133,7 +138,11 @@ Item {
 
     function run(op, args) {
         if (busy) {
-            error = "busy -- one write at a time";
+            opQueue = opQueue.concat([{
+                "op": op,
+                "args": args ?? ({
+                })
+            }]);
             return ;
         }
         busy = true;
@@ -217,6 +226,23 @@ Item {
             "cfg": cfg,
             "renames": renames
         });
+    }
+
+    // Each queued change re-reads the file when its turn comes, like any
+    // other: queueing changes the timing, never what gets written.
+    function pumpOps() {
+        if (busy || opQueue.length === 0)
+            return ;
+
+        const next = opQueue[0];
+        opQueue = opQueue.slice(1);
+        run(next.op, next.args);
+    }
+
+    onBusyChanged: {
+        if (!busy && opQueue.length > 0)
+            Qt.callLater(pumpOps);
+
     }
 
     // Opening the dashboard is a click on this machine, so stamping

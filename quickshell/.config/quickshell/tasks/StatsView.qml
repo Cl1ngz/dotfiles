@@ -175,7 +175,7 @@ Item {
 
         const m = Math.max(1, agg.max);
         const step = Math.min(4, Math.ceil((n / m) * 4));
-        return Qt.alpha(tone, 0.18 + 0.26 * step);
+        return Qt.alpha(tone, 0.18 + 0.2 * step);
     }
 
     implicitHeight: col.implicitHeight
@@ -455,7 +455,7 @@ Item {
                             if (v < 0)
                                 continue;
 
-                            ctx.fillStyle = v <= 0 ? Colors.surface0 : Qt.alpha(statsView.tone, 0.18 + 0.26 * Math.min(4, Math.ceil((v / weekMax) * 4)));
+                            ctx.fillStyle = v <= 0 ? Colors.surface0 : Qt.alpha(statsView.tone, 0.18 + 0.2 * Math.min(4, Math.ceil((v / weekMax) * 4)));
                             ctx.beginPath();
                             ctx.roundedRect(labelW + w * (g.cell + 1), rowY, g.cell, g.cell, 2, 2);
                             ctx.fill();

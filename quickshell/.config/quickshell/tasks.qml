@@ -2,6 +2,12 @@
 //   quickshell -p ~/.config/quickshell/tasks.qml
 // Launching per keypress is the laziest possible lazy-load: the whole
 // thing exists only while it is open, so idle cost is exactly zero.
+//
+// Keyboard, vim style. It opens in INSERT on the new-task field: type,
+// Enter, done (Ctrl+Enter adds and closes). Esc drops to NORMAL, where
+// j/k move, space ticks, e edits, dd deletes, / searches, ? lists the
+// rest. Esc in NORMAL (or q) closes.
+//
 // Tasks live in an Obsidian vault synced with Syncthing. Obsidian's own
 // checkbox toggle writes "[x]" and nothing else -- no plugin, so no
 // completion date -- which makes this dashboard the only thing that
@@ -57,6 +63,77 @@ PanelWindow {
     property var pickerApply: null
     property string vanishingRaw: ""
     property string vanishingAction: ""
+
+    // ---- keyboard ----------------------------------------------------
+    //
+    // NORMAL mode is `nav` having focus; INSERT is any text field having
+    // it. There is no separate mode variable to drift out of sync with
+    // where the keys actually go.
+    readonly property bool normalMode: nav.activeFocus
+    // The selected row. Tracked by key as well as index, so a write that
+    // reshuffles the list keeps the cursor on the same task; selAfter /
+    // selBefore are where it goes when that task leaves the list (ticked,
+    // deleted), like the cursor after dd in vim.
+    property int selIndex: -1
+    property string selKey: ""
+    property string selAfter: ""
+    property string selBefore: ""
+    // Set when a change will rewrite the selected task's line: the line
+    // it is expected to become, so the cursor can follow it.
+    property string pendingSelRaw: ""
+    // First key of a two-key command: gg, gt, gT, dd, za.
+    property string pending: ""
+    property bool showHelp: false
+    property bool quitWhenIdle: false
+    property bool ready: false
+    property var pickerReturn: null
+    property bool pickerNarrow: false
+    property int pickerHi: 0
+    property string editDraft: ""
+    readonly property var focusItem: card.Window.activeFocusItem
+    readonly property var catNames: taskStore.config.categories.map((c) => {
+        return c.name;
+    })
+    readonly property var addSuggest: suggestFor(addText.text)
+    readonly property var editSuggest: editingRaw !== "" ? suggestFor(editDraft) : []
+    readonly property var selRow: selIndex >= 0 && selIndex < rows.length ? rows[selIndex] : null
+    readonly property string confirmLabel: {
+        const t = taskStore.tasks.find((x) => {
+            return x.raw === confirmRaw;
+        });
+        const s = t ? t.text : "";
+        return s.length > 40 ? s.slice(0, 39) + "…" : s;
+    }
+    readonly property string hint: {
+        if (showHelp)
+            return "? or esc  close help";
+
+        if (pickerKey !== "")
+            return "type to filter · ↑ ↓  ctrl+n ctrl+p  move · enter pick · esc close";
+
+        if (confirmRaw !== "")
+            return normalMode ? "delete “" + confirmLabel + "”?   y  yes · any other key  no" : "click “sure?” to delete · esc keeps it";
+
+        if (addText.inputFocused)
+            return addSuggest.length > 0 ? "tab →  @" + addSuggest.join("   @") : "enter add · ctrl+enter add & close · @category !1 inline · esc normal mode";
+
+        if (searchField.inputFocused)
+            return "type to search · enter or ↓  to the list · esc normal mode";
+
+        if (editingRaw !== "" && !normalMode)
+            return editSuggest.length > 0 ? "tab →  @" + editSuggest.join("   @") : "enter save · @category !1 inline · esc cancel";
+
+        if (!normalMode)
+            return tab === 2 ? "tab / shift+tab  next field · ctrl+s save · esc normal mode" : "esc normal mode";
+
+        if (tab === 1)
+            return "h l  range · j k  scroll · gt gT  tabs · q quit · ?  help";
+
+        if (tab === 2)
+            return "tab or i  into the fields · ctrl+s save · j k  scroll · gt gT  tabs · ?  help";
+
+        return "j k move · space done · e edit · c cancel · dd delete · @ category · 1-9 importance · / search · a add · ? help";
+    }
     readonly property var openTasks: taskStore.tasks.filter((t) => {
         return t.open && matchesFilter(t);
     }).slice().sort(byPriority)
@@ -157,29 +234,85 @@ PanelWindow {
         folded = f;
     }
 
-    function showPicker(key, anchorItem, options, current, placeholder, apply) {
+    function showPicker(key, anchorItem, options, current, placeholder, apply, narrow) {
         if (pickerKey === key) {
             closePicker();
             return ;
         }
-        pickerKey = key;
+        // Where the keyboard was, so closing the picker puts it back.
+        if (pickerKey === "")
+            pickerReturn = focusItem;
+
         pickerAnchor = anchorItem;
         pickerOptions = options;
         pickerCurrent = current;
         pickerPlaceholder = placeholder;
         pickerApply = apply;
+        pickerNarrow = narrow === true;
+        // Last: onPickerKeyChanged reads the options set above.
+        pickerKey = key;
     }
 
     function closePicker() {
+        if (pickerKey === "")
+            return ;
+
+        const back = pickerReturn;
         pickerKey = "";
         pickerAnchor = null;
         pickerApply = null;
+        pickerReturn = null;
+        pickerNarrow = false;
+        if (back && back.visible)
+            back.forceActiveFocus();
+        else
+            toNormal();
     }
 
-    function act(raw, what) {
-        if (vanishingRaw !== "" || taskStore.busy)
+    // ---- picker by keyboard -------------------------------------------
+
+    function pickerCount() {
+        return (pop.noneShown ? 1 : 0) + pop.filtered.length;
+    }
+
+    function movePicker(delta) {
+        const n = pickerCount();
+        if (n === 0)
             return ;
 
+        pickerHi = Math.max(0, Math.min(n - 1, pickerHi + delta));
+        const li = pickerHi - (pop.noneShown ? 1 : 0);
+        if (li >= 0)
+            popList.positionViewAtIndex(li, ListView.Contain);
+
+    }
+
+    function pickAt(i) {
+        const fn = pickerApply;
+        if (!fn) {
+            closePicker();
+            return ;
+        }
+        if (pop.noneShown && i === 0) {
+            fn(null);
+        } else {
+            const o = pop.filtered[i - (pop.noneShown ? 1 : 0)];
+            if (o === undefined)
+                return ;
+
+            fn(o.name);
+        }
+        closePicker();
+    }
+
+    // A second action while the first is still animating no longer gets
+    // dropped: the first is sent straight away and the new one starts.
+    // Space, j, space must tick two tasks, not one.
+    function act(raw, what) {
+        if (vanishTimer.running) {
+            vanishTimer.stop();
+            fireVanish();
+        }
         vanishingRaw = raw;
         vanishingAction = what;
         vanishTimer.restart();
@@ -228,20 +361,554 @@ PanelWindow {
         return Colors.textFaint;
     }
 
+    // One level at a time, innermost first: help, picker, delete prompt,
+    // inline edit, a text field (INSERT -> NORMAL), and only then quit.
     function handleEscape() {
-        if (root.pickerKey !== "") {
-            root.closePicker();
+        pending = "";
+        if (showHelp) {
+            showHelp = false;
             return ;
         }
-        if (root.confirmRaw !== "") {
-            root.confirmRaw = "";
+        if (pickerKey !== "") {
+            closePicker();
             return ;
         }
-        if (root.editingRaw !== "") {
-            root.editingRaw = "";
+        if (confirmRaw !== "") {
+            confirmRaw = "";
             return ;
         }
-        Qt.quit();
+        if (editingRaw !== "") {
+            editingRaw = "";
+            toNormal();
+            return ;
+        }
+        if (!normalMode) {
+            toNormal();
+            return ;
+        }
+        quit();
+    }
+
+    // ---- quitting without losing a write ---------------------------------
+    //
+    // Closing kills every running Process, including one halfway through
+    // writing tasks.md. From the keyboard, "space then q" is a quarter of
+    // a second: well inside the tick animation, before the write has even
+    // started. So a quit waits until nothing is in flight.
+
+    function idle() {
+        return !vanishTimer.running && !taskStore.busy && taskStore.opQueue.length === 0 && taskStore.writeQueue.length === 0;
+    }
+
+    function quit() {
+        // Asked twice: you mean it.
+        if (idle() || quitWhenIdle) {
+            Qt.quit();
+            return ;
+        }
+        quitWhenIdle = true;
+    }
+
+    // ---- selection --------------------------------------------------------
+
+    function rowKey(r) {
+        if (!r)
+            return "";
+
+        return r.kind === "task" ? "t:" + r.t.raw : r.kind === "header" ? "h:" + r.key : "";
+    }
+
+    function selectable(i) {
+        const r = rows[i];
+        return r !== undefined && (r.kind === "task" || r.kind === "header");
+    }
+
+    function firstTaskIndex() {
+        const i = rows.findIndex((r) => {
+            return r.kind === "task";
+        });
+        return i === -1 ? 0 : i;
+    }
+
+    // Neighbours in the same section only: ticking the last open task
+    // should leave the cursor on the open list, not jump into DONE.
+    function rememberNeighbours() {
+        selAfter = "";
+        selBefore = "";
+        for (let j = selIndex + 1; j < rows.length && rows[j].kind === "task"; j++) {
+            selAfter = rowKey(rows[j]);
+            break;
+        }
+        for (let j = selIndex - 1; j >= 0 && rows[j].kind === "task"; j--) {
+            selBefore = rowKey(rows[j]);
+            break;
+        }
+    }
+
+    function select(i) {
+        if (rows.length === 0) {
+            selIndex = -1;
+            selKey = "";
+            return ;
+        }
+        i = Math.max(0, Math.min(rows.length - 1, i));
+        while (i > 0 && !selectable(i))i--
+        selIndex = i;
+        selKey = rowKey(rows[i]);
+        rememberNeighbours();
+    }
+
+    function move(delta) {
+        if (selIndex < 0 || !selectable(selIndex)) {
+            select(firstTaskIndex());
+            return ;
+        }
+        const step = delta > 0 ? 1 : -1;
+        let i = selIndex;
+        for (let n = Math.abs(delta); n > 0; n--) {
+            let j = i + step;
+            while (j >= 0 && j < rows.length && !selectable(j))j += step
+            if (j < 0 || j >= rows.length)
+                break;
+
+            i = j;
+        }
+        select(i);
+    }
+
+    function toNormal(selectFirst) {
+        nav.forceActiveFocus();
+        if (selectFirst === true || selIndex < 0 || !selectable(selIndex))
+            select(firstTaskIndex());
+
+    }
+
+    function setTab(i) {
+        closePicker();
+        showHelp = false;
+        tab = i;
+        // The field that had the keyboard may have just been hidden.
+        Qt.callLater(() => {
+            if (!root.normalMode && !(root.focusItem && root.focusItem.visible))
+                root.toNormal();
+
+        });
+    }
+
+    function focusAdd() {
+        if (tab !== 0)
+            setTab(0);
+
+        Qt.callLater(() => {
+            return addText.focusInput();
+        });
+    }
+
+    function focusField(forward) {
+        const n = nav.nextItemInFocusChain(forward);
+        if (n && n !== nav)
+            n.forceActiveFocus();
+
+    }
+
+    // "/" starts a new search, as in vim.
+    function startSearch() {
+        searchText = "";
+        searchField.text = "";
+        searchField.focusInput();
+    }
+
+    function clearFilters() {
+        searchText = "";
+        searchField.text = "";
+        filterCat = "";
+    }
+
+    function openFilterPicker() {
+        showPicker("filter", filterBtn, filterOptions, filterCat === "" ? null : filterCat, "all categories", (v) => {
+            return root.filterCat = (v === null ? "" : v);
+        });
+    }
+
+    // ---- inline tokens and completion --------------------------------------
+    //
+    // "buy milk @home !2" in the add or edit field sets the category and
+    // importance, in the same syntax as tasks.md. Unknown @words stay in
+    // the text, exactly as the parser treats them in the file.
+
+    function parseInline(text) {
+        return Parse.splitBody(text, catNames);
+    }
+
+    // Categories matching the @word being typed at the end of the text.
+    function suggestFor(text) {
+        const m = /(^|\s)@([^\s@]*)$/.exec(text ?? "");
+        if (!m)
+            return [];
+
+        const q = m[2].toLowerCase();
+        const pre = [];
+        const sub = [];
+        for (const n of catNames) {
+            const l = n.toLowerCase();
+            if (l.startsWith(q))
+                pre.push(n);
+            else if (l.indexOf(q) !== -1)
+                sub.push(n);
+        }
+        return pre.concat(sub).slice(0, 6);
+    }
+
+    function completeTag(text, list) {
+        if (list.length === 0)
+            return text;
+
+        return text.replace(/@([^\s@]*)$/, "@" + list[0] + " ");
+    }
+
+    // The line a task becomes after an edit, so the cursor can follow it
+    // through the reload. Written by the same function Parse uses.
+    function predictRaw(task, text, cat, imp) {
+        return Parse.renderTask({
+            "indent": "",
+            "bullet": task.raw.charAt(0),
+            "mark": task.raw.charAt(3) === "X" ? "x" : task.raw.charAt(3),
+            "text": (text ?? "").trim(),
+            "category": cat || null,
+            "importance": (imp === null || imp === undefined || imp === "") ? null : parseInt(imp, 10),
+            "doneDate": task.doneDate
+        });
+    }
+
+    function addFromField(andQuit) {
+        const raw = addText.text.trim();
+        if (raw !== "") {
+            const p = parseInline(raw);
+            if (p.text !== "") {
+                taskStore.add({
+                    "text": p.text,
+                    "category": p.category ?? addPick.cat,
+                    "importance": p.importance ?? addPick.imp
+                });
+                addText.text = "";
+            }
+        }
+        if (andQuit)
+            quit();
+        else
+            addText.focusInput();
+    }
+
+    function saveEdit(task, text, cat, imp) {
+        const p = parseInline(text);
+        const c = p.category ?? cat;
+        const i = p.importance ?? imp;
+        taskStore.edit(task.raw, {
+            "text": p.text,
+            "category": c,
+            "importance": i
+        });
+        pendingSelRaw = predictRaw(task, p.text, c, i);
+        editingRaw = "";
+        toNormal();
+    }
+
+    function setImportanceOf(task, level) {
+        if (level !== null && !taskStore.config.importance.some((x) => {
+            return x.level === level;
+        }))
+            return ;
+
+        taskStore.edit(task.raw, {
+            "importance": level
+        });
+        pendingSelRaw = predictRaw(task, task.text, task.category, level);
+    }
+
+    function pickCategoryFor(task) {
+        const anchor = list.itemAtIndex(selIndex);
+        if (!anchor)
+            return ;
+
+        showPicker("sel", anchor, catOptions, task.category, "no category", (v) => {
+            taskStore.edit(task.raw, {
+                "category": v
+            });
+            root.pendingSelRaw = root.predictRaw(task, task.text, v, task.importance);
+        }, true);
+    }
+
+    // ---- normal mode keys ------------------------------------------------
+
+    function normalKey(e) {
+        const ctrl = (e.modifiers & Qt.ControlModifier) !== 0;
+        const t = e.text;
+        const k = e.key;
+        const prev = pending;
+        pending = "";
+        e.accepted = true;
+        if (showHelp) {
+            if (t === "?" || t === "q")
+                showHelp = false;
+
+            return ;
+        }
+        // The delete prompt eats the next key: y deletes, anything else
+        // keeps the task.
+        if (confirmRaw !== "") {
+            if (t === "y" || k === Qt.Key_Return || k === Qt.Key_Enter)
+                taskStore.remove(confirmRaw);
+
+            confirmRaw = "";
+            return ;
+        }
+        if (prev === "g" && t === "t") {
+            setTab((tab + 1) % 3);
+            return ;
+        }
+        if (prev === "g" && t === "T") {
+            setTab((tab + 2) % 3);
+            return ;
+        }
+        if (k === Qt.Key_Backtab) {
+            if (ctrl)
+                setTab((tab + 2) % 3);
+            else
+                focusField(false);
+            return ;
+        }
+        if (k === Qt.Key_Tab) {
+            if (ctrl)
+                setTab((tab + 1) % 3);
+            else
+                focusField(true);
+            return ;
+        }
+        if (t === "q") {
+            quit();
+            return ;
+        }
+        if (t === "?") {
+            showHelp = true;
+            return ;
+        }
+        const handled = tab === 0 ? tasksKey(t, k, ctrl, prev) : otherKey(t, k, ctrl, prev);
+        if (!handled)
+            e.accepted = false;
+
+    }
+
+    function tasksKey(t, k, ctrl, prev) {
+        const half = Math.max(3, Math.floor(list.height / 60));
+        if (ctrl) {
+            switch (k) {
+            case Qt.Key_D:
+                move(half);
+                return true;
+            case Qt.Key_U:
+                move(-half);
+                return true;
+            case Qt.Key_N:
+            case Qt.Key_J:
+                move(1);
+                return true;
+            case Qt.Key_P:
+            case Qt.Key_K:
+                move(-1);
+                return true;
+            }
+            return false;
+        }
+        const r = selRow;
+        // Second key of a two-key command. Settled first, so the "d" of
+        // dd or the "a" of za is never read as a command of its own.
+        if (prev === "d") {
+            if (t === "d" && r !== null && r.kind === "task")
+                confirmRaw = r.t.raw;
+
+            return true;
+        }
+        if (prev === "z") {
+            if (t === "a" && r !== null) {
+                for (let i = selIndex; i >= 0; i--) {
+                    if (rows[i].kind === "header") {
+                        toggleFold(rows[i].key);
+                        select(i);
+                        break;
+                    }
+                }
+            }
+            return true;
+        }
+        if (prev === "g") {
+            if (t === "g")
+                select(0);
+
+            return true;
+        }
+        if (t === "g" || t === "z" || t === "d") {
+            pending = t;
+            return true;
+        }
+        if (t === "j" || k === Qt.Key_Down) {
+            move(1);
+            return true;
+        }
+        if (t === "k" || k === Qt.Key_Up) {
+            move(-1);
+            return true;
+        }
+        if (k === Qt.Key_Home) {
+            select(0);
+            return true;
+        }
+        if (t === "G" || k === Qt.Key_End) {
+            select(rows.length - 1);
+            return true;
+        }
+        if (t === "/") {
+            startSearch();
+            return true;
+        }
+        if (t === "a" || t === "A" || t === "o" || t === "O") {
+            focusAdd();
+            return true;
+        }
+        if (t === "f") {
+            openFilterPicker();
+            return true;
+        }
+        if (t === "F") {
+            clearFilters();
+            return true;
+        }
+        if (r === null)
+            return t !== "";
+
+        const enter = k === Qt.Key_Return || k === Qt.Key_Enter;
+        if (r.kind === "header") {
+            const isFolded = folded[r.key] === true;
+            if (t === " " || t === "x" || enter || (t === "l" && isFolded) || (t === "h" && !isFolded))
+                toggleFold(r.key);
+
+            return true;
+        }
+        const task = r.t;
+        const mode = r.mode;
+        if (t === " " || t === "x") {
+            act(task.raw, mode === "open" ? "tick" : mode === "done" ? "untick" : "uncancel");
+            return true;
+        }
+        if (t === "u" && mode !== "open") {
+            act(task.raw, mode === "done" ? "untick" : "uncancel");
+            return true;
+        }
+        if (t === "c" && mode !== "done") {
+            act(task.raw, mode === "cancelled" ? "uncancel" : "cancel");
+            return true;
+        }
+        if (mode !== "open")
+            return t !== "";
+
+        if (t === "e" || t === "i" || t === "I" || enter) {
+            closePicker();
+            editingRaw = task.raw;
+            return true;
+        }
+        if (t === "@") {
+            pickCategoryFor(task);
+            return true;
+        }
+        if (/^[0-9]$/.test(t)) {
+            setImportanceOf(task, t === "0" ? null : parseInt(t, 10));
+            return true;
+        }
+        return t !== "";
+    }
+
+    // Stats and settings: the page scrolls, h/l walk the stats ranges,
+    // and i / Enter / Tab go into the settings fields.
+    function otherKey(t, k, ctrl, prev) {
+        const f = altBodyFlick;
+        const maxY = Math.max(0, f.contentHeight - f.height);
+        const scroll = (dy) => {
+            f.contentY = Math.max(0, Math.min(maxY, f.contentY + dy));
+        };
+        if (ctrl) {
+            if (k === Qt.Key_D) {
+                scroll(f.height / 2);
+                return true;
+            }
+            if (k === Qt.Key_U) {
+                scroll(-f.height / 2);
+                return true;
+            }
+            return false;
+        }
+        if (t === "j" || k === Qt.Key_Down) {
+            scroll(48);
+            return true;
+        }
+        if (t === "k" || k === Qt.Key_Up) {
+            scroll(-48);
+            return true;
+        }
+        if ((prev === "g" && t === "g") || k === Qt.Key_Home) {
+            f.contentY = 0;
+            return true;
+        }
+        if (t === "G" || k === Qt.Key_End) {
+            f.contentY = maxY;
+            return true;
+        }
+        if (t === "g") {
+            pending = "g";
+            return true;
+        }
+        if (tab === 1 && (t === "h" || k === Qt.Key_Left)) {
+            statsView.range = Math.max(0, statsView.range - 1);
+            return true;
+        }
+        if (tab === 1 && (t === "l" || k === Qt.Key_Right)) {
+            statsView.range = Math.min(statsView.rangeNames.length - 1, statsView.range + 1);
+            return true;
+        }
+        if (tab === 2 && (t === "i" || t === "a" || k === Qt.Key_Return || k === Qt.Key_Enter)) {
+            focusField(true);
+            return true;
+        }
+        return t !== "";
+    }
+
+    // Safety net: if the focused field disappears (tab switch, editor
+    // closed by a reload), keys would go nowhere. Fall back to NORMAL.
+    function ensureFocus() {
+        const f = card.Window.activeFocusItem;
+        const isInput = f !== null && f !== undefined && f.selectByMouse !== undefined && f.visible;
+        if (f !== nav && !isInput)
+            toNormal();
+
+    }
+
+    function fireVanish() {
+        const raw = root.vanishingRaw;
+        const what = root.vanishingAction;
+        root.vanishingRaw = "";
+        root.vanishingAction = "";
+        switch (what) {
+        case "tick":
+            taskStore.tick(raw);
+            break;
+        case "untick":
+            taskStore.untick(raw);
+            break;
+        case "cancel":
+            taskStore.cancel(raw);
+            break;
+        case "uncancel":
+            taskStore.uncancel(raw);
+            break;
+        }
     }
 
     WlrLayershell.layer: WlrLayer.Overlay
@@ -252,8 +919,53 @@ PanelWindow {
     // long category list is reachable by typing straight away.
     onPickerKeyChanged: {
         popSearch.text = "";
-        if (pickerKey !== "")
-            popSearch.focusInput();
+        if (pickerKey !== "") {
+            // Start on the current value, so Enter straight away keeps it.
+            const i = pickerCurrent === null ? -1 : pickerOptions.findIndex((o) => {
+                return o.name === pickerCurrent;
+            });
+            pickerHi = i === -1 ? 0 : i + 1;
+            Qt.callLater(() => {
+                popSearch.focusInput();
+                root.movePicker(0);
+            });
+        }
+    }
+    onFocusItemChanged: {
+        if (ready)
+            Qt.callLater(ensureFocus);
+
+    }
+    onSelIndexChanged: Qt.callLater(() => {
+        if (root.selIndex >= 0 && root.tab === 0)
+            list.positionViewAtIndex(root.selIndex, ListView.Contain);
+
+    })
+    // Keep the cursor on the same task across reloads; when it is gone,
+    // move to its neighbour in the same section, then to the same spot.
+    onRowsChanged: {
+        let k = -1;
+        if (pendingSelRaw !== "")
+            k = rows.findIndex((r) => {
+            return r.kind === "task" && r.t.raw === pendingSelRaw;
+        });
+
+        for (const key of [selKey, selAfter, selBefore]) {
+            if (k !== -1 || key === "")
+                continue;
+
+            k = rows.findIndex((r) => {
+                return rowKey(r) === key;
+            });
+        }
+        if (k !== -1) {
+            selIndex = k;
+            selKey = rowKey(rows[k]);
+            rememberNeighbours();
+            return ;
+        }
+        if (selIndex >= 0)
+            select(selIndex);
 
     }
 
@@ -276,26 +988,41 @@ PanelWindow {
         id: vanishTimer
 
         interval: 180
+        onTriggered: root.fireVanish()
+    }
+
+    // Opens in INSERT on the new-task field. A beat after creation, so
+    // it lands after the window has the keyboard and after the first
+    // list build.
+    Timer {
+        interval: 60
+        running: true
         onTriggered: {
-            const raw = root.vanishingRaw;
-            const what = root.vanishingAction;
-            root.vanishingRaw = "";
-            root.vanishingAction = "";
-            switch (what) {
-            case "tick":
-                taskStore.tick(raw);
-                break;
-            case "untick":
-                taskStore.untick(raw);
-                break;
-            case "cancel":
-                taskStore.cancel(raw);
-                break;
-            case "uncancel":
-                taskStore.uncancel(raw);
-                break;
-            }
+            addText.focusInput();
+            root.ready = true;
         }
+    }
+
+    // Polls while a quit is waiting on a write; a failed write cancels
+    // the quit so the error stays on screen.
+    Timer {
+        interval: 80
+        repeat: true
+        running: root.quitWhenIdle
+        onTriggered: {
+            if (taskStore.error !== "")
+                root.quitWhenIdle = false;
+            else if (root.idle())
+                Qt.quit();
+        }
+    }
+
+    Connections {
+        function onRefreshed() {
+            root.pendingSelRaw = "";
+        }
+
+        target: taskStore
     }
 
     // Handled before key events reach any item, so it fires whatever
@@ -307,9 +1034,20 @@ PanelWindow {
         onActivated: root.handleEscape()
     }
 
+    Shortcut {
+        sequences: ["Ctrl+S"]
+        context: Qt.ApplicationShortcut
+        enabled: root.tab === 2
+        onActivated: {
+            if (settingsView.dirty)
+                settingsView.save();
+
+        }
+    }
+
     MouseArea {
         anchors.fill: parent
-        onClicked: Qt.quit()
+        onClicked: root.quit()
     }
 
     Rectangle {
@@ -358,6 +1096,20 @@ PanelWindow {
             onClicked: root.closePicker()
         }
 
+        // NORMAL mode lives here: an empty item that is not an ancestor
+        // of any field, so keys typed into a field travel up the field's
+        // own parents and never arrive here -- "j" in search types a j.
+        // First in the card, so Tab from it reaches the first field and
+        // Shift+Tab the last.
+        Item {
+            id: nav
+
+            objectName: "nav"
+            Keys.onPressed: (e) => {
+                return root.normalKey(e);
+            }
+        }
+
         Column {
             id: headerCol
 
@@ -392,10 +1144,33 @@ PanelWindow {
                         color: Colors.textFaint
                     }
 
+                    // Which mode the keys are in, as vim shows it, plus the
+                    // first half of a two-key command while it waits.
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        implicitWidth: modeLbl.implicitWidth + 12
+                        implicitHeight: 16
+                        radius: 4
+                        color: root.normalMode ? Qt.alpha(Colors.accent, 0.16) : Qt.alpha(Colors.warn, 0.16)
+
+                        Text {
+                            id: modeLbl
+
+                            anchors.centerIn: parent
+                            text: (root.normalMode ? "NORMAL" : "INSERT") + (root.pending !== "" ? "  " + root.pending : "")
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 9
+                            font.letterSpacing: 1
+                            font.weight: Font.DemiBold
+                            color: root.normalMode ? Colors.accent : Colors.warn
+                        }
+
+                    }
+
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        visible: taskStore.busy
-                        text: "saving…"
+                        visible: taskStore.busy || root.quitWhenIdle
+                        text: root.quitWhenIdle ? "saving, then closing…" : "saving…"
                         font.family: "JetBrainsMono Nerd Font"
                         font.pixelSize: 10
                         color: Colors.warn
@@ -418,17 +1193,14 @@ PanelWindow {
                             label: modelData
                             tint: Colors.accent
                             active: root.tab === index
-                            onClicked: {
-                                root.closePicker();
-                                root.tab = index;
-                            }
+                            onClicked: root.setTab(index)
                         }
 
                     }
 
                     TinyBtn {
                         label: "esc"
-                        onClicked: Qt.quit()
+                        onClicked: root.quit()
                     }
 
                 }
@@ -524,6 +1296,9 @@ PanelWindow {
                     placeholder: "search tasks…"
                     text: root.searchText
                     onEdited: root.searchText = text
+                    // Enter or Down: to the results, cursor on the first.
+                    onSubmitted: root.toNormal(true)
+                    onDownPressed: root.toNormal(true)
                 }
 
                 PickerButton {
@@ -537,9 +1312,7 @@ PanelWindow {
                     current: root.filterCat === "" ? null : root.filterCat
                     dotColor: root.catColor(root.filterCat)
                     open: root.pickerKey === "filter"
-                    onToggled: root.showPicker("filter", filterBtn, root.filterOptions, root.filterCat === "" ? null : root.filterCat, "all categories", (v) => {
-                        return root.filterCat = (v === null ? "" : v);
-                    })
+                    onToggled: root.openFilterPicker()
                 }
 
                 TinyBtn {
@@ -633,25 +1406,63 @@ PanelWindow {
                 readonly property bool editing: isTask && root.editingRaw === task.raw
                 readonly property bool confirming: isTask && root.confirmRaw === task.raw
                 readonly property bool vanishing: isTask && root.vanishingRaw === task.raw
+                readonly property bool selected: root.normalMode && root.tab === 0 && index === root.selIndex
                 // Editor state lives on the delegate, seeded each time
                 // the editor opens, so reopening after a cancelled edit
                 // does not resurrect stale pickers.
                 property var editCat: null
                 property var editImp: null
 
+                // The editor's field is focused when editing STARTS, never
+                // when a row is created. Focusing on creation was the bug:
+                // every row has a (hidden) editor, the list rebuilds all
+                // rows on every keystroke in search and once more when
+                // the file loads -- and each rebuild handed the keyboard
+                // to a hidden editor, out of search and out of new task.
                 onEditingChanged: {
                     if (editing) {
                         editCat = task.category;
                         editImp = task.importance;
+                        root.editDraft = task.text;
+                        focusEditor.start();
                     }
+                }
+                // A reload rebuilds the row being edited; give it back the
+                // keyboard it had.
+                Component.onCompleted: {
+                    if (editing)
+                        focusEditor.start();
+
                 }
                 width: list.width
                 implicitHeight: modelData.kind === "header" ? 24 : modelData.kind === "note" ? 20 : taskBg.implicitHeight
                 height: implicitHeight
 
+                // Dies with the row, unlike Qt.callLater, so it can never
+                // fire into a destroyed editor.
+                Timer {
+                    id: focusEditor
+
+                    interval: 0
+                    onTriggered: {
+                        if (rowItem.editing)
+                            editText.focusInput();
+
+                    }
+                }
+
                 Item {
                     visible: rowItem.modelData.kind === "header"
                     anchors.fill: parent
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 6
+                        visible: rowItem.selected
+                        color: Colors.surface0
+                        border.width: 1
+                        border.color: Qt.alpha(Colors.accent, 0.6)
+                    }
 
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
@@ -680,7 +1491,10 @@ PanelWindow {
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: root.toggleFold(rowItem.modelData.key)
+                        onClicked: {
+                            root.select(rowItem.index);
+                            root.toggleFold(rowItem.modelData.key);
+                        }
                     }
 
                 }
@@ -715,7 +1529,7 @@ PanelWindow {
                         if (!rowItem.isTask)
                             return "transparent";
 
-                        const hovered = rowHover.hovered || rowItem.editing || rowItem.confirming;
+                        const hovered = rowHover.hovered || rowItem.editing || rowItem.confirming || rowItem.selected;
                         if (rowItem.task.importance !== null) {
                             // Done and cancelled rows are faded: their
                             // priority is history, not a call to act.
@@ -725,6 +1539,10 @@ PanelWindow {
                         return hovered ? Colors.surface0 : "transparent";
                     }
                     opacity: rowItem.vanishing ? 0 : 1
+                    // The keyboard cursor: an outline, so it reads on top
+                    // of any importance tint.
+                    border.width: rowItem.selected ? 1 : 0
+                    border.color: Qt.alpha(Colors.accent, 0.75)
 
                     // Importance as a bar down the left edge rather than
                     // a dot on the right: it reads as a property of the
@@ -749,6 +1567,12 @@ PanelWindow {
                     // That fed back on itself and flickered.
                     HoverHandler {
                         id: rowHover
+                    }
+
+                    // Clicking a row puts the keyboard cursor on it, so
+                    // mouse and keys can be mixed.
+                    TapHandler {
+                        onTapped: root.select(rowItem.index)
                     }
 
                     Column {
@@ -907,7 +1731,7 @@ PanelWindow {
                                 // available to the text and the
                                 // category pill, so everything in the
                                 // row jumped sideways on hover.
-                                readonly property bool shown: rowHover.hovered || rowItem.editing || rowItem.confirming
+                                readonly property bool shown: rowHover.hovered || rowItem.editing || rowItem.confirming || rowItem.selected
 
                                 anchors.right: parent.right
                                 anchors.verticalCenter: parent.verticalCenter
@@ -979,7 +1803,12 @@ PanelWindow {
                                 height: 28
                                 text: rowItem.isTask ? rowItem.task.text : ""
                                 placeholder: "task text"
-                                Component.onCompleted: focusInput()
+                                captureTab: root.editSuggest.length > 0
+                                onEdited: root.editDraft = text
+                                onTabPressed: {
+                                    text = root.completeTag(text, root.editSuggest);
+                                    root.editDraft = text;
+                                }
                                 onSubmitted: editSave.clicked()
                             }
 
@@ -1037,14 +1866,7 @@ PanelWindow {
                                     anchors.verticalCenter: parent.verticalCenter
                                     label: "save"
                                     tint: Colors.accent
-                                    onClicked: {
-                                        taskStore.edit(rowItem.task.raw, {
-                                            "text": editText.text,
-                                            "category": rowItem.editCat,
-                                            "importance": rowItem.editImp
-                                        });
-                                        root.editingRaw = "";
-                                    }
+                                    onClicked: root.saveEdit(rowItem.task, editText.text, rowItem.editCat, rowItem.editImp)
                                 }
 
                             }
@@ -1102,14 +1924,35 @@ PanelWindow {
             color: Colors.textFaint
         }
 
+        // One line, always present: what the keys do right now. It is the
+        // cheat sheet that changes with the mode, so ? is rarely needed.
+        Text {
+            id: hintBar
+
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 10
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.leftMargin: card.pad
+            anchors.rightMargin: card.pad
+            height: 14
+            text: root.hint
+            elide: Text.ElideRight
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 10
+            color: root.confirmRaw !== "" ? Colors.danger : Colors.textFaint
+        }
+
         Column {
             id: footer
 
             visible: root.tab === 0
-            anchors.bottom: parent.bottom
+            anchors.bottom: hintBar.top
+            anchors.bottomMargin: 8
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.margins: card.pad
+            anchors.leftMargin: card.pad
+            anchors.rightMargin: card.pad
             spacing: 8
 
             Rectangle {
@@ -1130,9 +1973,12 @@ PanelWindow {
                     anchors.rightMargin: 8
                     anchors.verticalCenter: parent.verticalCenter
                     height: 30
-                    placeholder: "new task…"
+                    placeholder: "new task…  (@category !1 work inline)"
                     Component.onCompleted: focusInput()
-                    onSubmitted: addGo.clicked()
+                    captureTab: root.addSuggest.length > 0
+                    onTabPressed: text = root.completeTag(text, root.addSuggest)
+                    onSubmitted: root.addFromField(false)
+                    onCtrlSubmitted: root.addFromField(true)
                 }
 
                 TinyBtn {
@@ -1142,18 +1988,7 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     label: "add"
                     tint: Colors.accent
-                    onClicked: {
-                        if (addText.text.trim() === "")
-                            return ;
-
-                        taskStore.add({
-                            "text": addText.text,
-                            "category": addPick.cat,
-                            "importance": addPick.imp
-                        });
-                        addText.text = "";
-                        addText.focusInput();
-                    }
+                    onClicked: root.addFromField(false)
                 }
 
             }
@@ -1220,8 +2055,8 @@ PanelWindow {
             visible: root.tab !== 0
             anchors.top: headerCol.bottom
             anchors.topMargin: 10
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: card.pad
+            anchors.bottom: hintBar.top
+            anchors.bottomMargin: 8
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.leftMargin: card.pad
@@ -1274,6 +2109,9 @@ PanelWindow {
                 readonly property point src: root.pickerAnchor ? root.pickerAnchor.mapToItem(card, 0, 0) : Qt.point(0, 0)
                 readonly property real anchorH: root.pickerAnchor ? root.pickerAnchor.height : 0
                 readonly property bool below: src.y + anchorH + 4 + height < card.height - 8
+                // The "none" row only shows with an empty filter, so it
+                // shifts every index by one; pickerHi counts it.
+                readonly property bool noneShown: popSearch.text === ""
                 readonly property var filtered: {
                     const q = popSearch.text.toLowerCase().trim();
                     if (q === "")
@@ -1293,9 +2131,11 @@ PanelWindow {
                     return pre.concat(sub);
                 }
 
-                width: Math.max(210, root.pickerAnchor ? root.pickerAnchor.width : 210)
+                // Narrow when opened for a whole row (@ on a task): a
+                // row-wide dropdown would be 700px of mostly nothing.
+                width: root.pickerNarrow ? 240 : Math.max(210, root.pickerAnchor ? root.pickerAnchor.width : 210)
                 height: Math.min(268, popBody.implicitHeight + 12)
-                x: Math.max(8, Math.min(src.x, card.width - width - 8))
+                x: Math.max(8, Math.min(root.pickerNarrow && root.pickerAnchor ? src.x + root.pickerAnchor.width - width : src.x, card.width - width - 8))
                 y: below ? src.y + anchorH + 4 : Math.max(8, src.y - height - 4)
                 radius: 9
                 color: Colors.mantle
@@ -1318,11 +2158,13 @@ PanelWindow {
                         height: 26
                         fontSize: 11
                         placeholder: "filter…"
+                        onEdited: root.pickerHi = 0
+                        onUpPressed: root.movePicker(-1)
+                        onDownPressed: root.movePicker(1)
                         onSubmitted: {
-                            if (pop.filtered.length > 0 && root.pickerApply) {
-                                root.pickerApply(pop.filtered[0].name);
-                                root.closePicker();
-                            }
+                            if (root.pickerCount() > 0)
+                                root.pickAt(root.pickerHi);
+
                         }
                     }
 
@@ -1331,7 +2173,7 @@ PanelWindow {
                         height: 24
                         radius: 6
                         visible: popSearch.text === ""
-                        color: noneMouse.containsMouse ? Colors.surface1 : "transparent"
+                        color: noneMouse.containsMouse || root.pickerHi === 0 ? Colors.surface1 : "transparent"
 
                         Text {
                             anchors.left: parent.left
@@ -1372,12 +2214,14 @@ PanelWindow {
                             id: optRow
 
                             required property var modelData
+                            required property int index
                             readonly property bool chosen: root.pickerCurrent === modelData.name
+                            readonly property bool lit: root.pickerHi === index + (pop.noneShown ? 1 : 0)
 
                             width: popList.width
                             height: 24
                             radius: 6
-                            color: optMouse.containsMouse ? Colors.surface1 : chosen ? Qt.alpha(Colors.accent, 0.12) : "transparent"
+                            color: optMouse.containsMouse || lit ? Colors.surface1 : chosen ? Qt.alpha(Colors.accent, 0.12) : "transparent"
 
                             Rectangle {
                                 id: optDot
@@ -1437,6 +2281,95 @@ PanelWindow {
 
         }
 
+        // ? -- every key in one place.
+        Rectangle {
+            id: helpPanel
+
+            readonly property var normalKeys: [["j k  ↓ ↑", "move"], ["gg  G", "top / bottom"], ["ctrl+d  ctrl+u", "half a page"], ["space  x", "done · undo · restore"], ["e  enter", "edit the text"], ["c", "cancel · restore"], ["dd  then y", "delete"], ["@", "category"], ["1-9  0", "importance · none"], ["/", "search"], ["f  F", "category filter · clear filters"], ["a  o", "new task"], ["space on a header", "fold / unfold"], ["za", "fold this section"], ["gt  gT", "next / previous tab"], ["h l", "stats range"], ["tab  shift+tab", "into the fields"], ["q  esc", "close"]]
+            readonly property var insertKeys: [["enter", "add · save"], ["ctrl+enter", "add and close"], ["@name  !N", "category, importance inline"], ["tab", "complete @category"], ["ctrl+w  ctrl+u", "delete word · line"], ["ctrl+s", "save settings"], ["esc", "back to NORMAL"]]
+            readonly property var pickerKeys: [["type", "filter"], ["↑ ↓  ctrl+n ctrl+p", "move"], ["enter", "pick"], ["esc", "close"]]
+
+            visible: root.showHelp
+            z: 200
+            anchors.centerIn: parent
+            width: 660
+            height: helpBody.implicitHeight + 32
+            radius: 12
+            color: Colors.mantle
+            border.width: 1
+            border.color: Qt.alpha(Colors.accent, 0.5)
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: root.showHelp = false
+            }
+
+            Row {
+                id: helpBody
+
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: 16
+                spacing: 24
+
+                Column {
+                    width: 330
+                    spacing: 4
+
+                    HelpTitle {
+                        text: "NORMAL"
+                    }
+
+                    Repeater {
+                        model: helpPanel.normalKeys
+
+                        HelpRow {
+                        }
+
+                    }
+
+                }
+
+                Column {
+                    width: 270
+                    spacing: 4
+
+                    HelpTitle {
+                        text: "INSERT"
+                    }
+
+                    Repeater {
+                        model: helpPanel.insertKeys
+
+                        HelpRow {
+                        }
+
+                    }
+
+                    Item {
+                        width: 1
+                        height: 8
+                    }
+
+                    HelpTitle {
+                        text: "PICKER"
+                    }
+
+                    Repeater {
+                        model: helpPanel.pickerKeys
+
+                        HelpRow {
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
         Behavior on opacity {
             NumberAnimation {
                 duration: 150
@@ -1451,6 +2384,37 @@ PanelWindow {
                 easing.type: Easing.OutCubic
             }
 
+        }
+
+    }
+
+    // Inline components: top level of the root object only.
+    component HelpTitle: Text {
+        font.family: "JetBrainsMono Nerd Font"
+        font.pixelSize: 9
+        font.letterSpacing: 1
+        color: Colors.textFaint
+        bottomPadding: 2
+    }
+
+    component HelpRow: Row {
+        required property var modelData
+
+        spacing: 10
+
+        Text {
+            width: 130
+            text: parent.modelData[0]
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 11
+            color: Colors.accent
+        }
+
+        Text {
+            text: parent.modelData[1]
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 11
+            color: Colors.textMain
         }
 
     }
