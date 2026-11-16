@@ -81,6 +81,10 @@ return {
     local capabilities =
       vim.tbl_deep_extend("force", vim.lsp.protocol.make_client_capabilities(), cmp_nvim_lsp.default_capabilities())
 
+    -- Nvim disables this on Linux by default, which is why new files stay
+    -- invisible to pyright until a restart. Costs CPU on very large repos.
+    capabilities.workspace.didChangeWatchedFiles.dynamicRegistration = true
+
     vim.lsp.config("*", { capabilities = capabilities })
 
     -- ----------------------------------------------------------------------

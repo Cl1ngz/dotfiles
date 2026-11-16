@@ -1,6 +1,6 @@
 return {
   "mrcjkb/rustaceanvim",
-  version = "^5",
+  version = "^6",
   lazy = false,
   config = function()
     vim.g.rustaceanvim = {
@@ -13,7 +13,10 @@ return {
         end,
         default_settings = {
           ["rust-analyzer"] = {
-            cargo = { allFeatures = true },
+            cargo = {
+              allFeatures = true,
+              targetDir = true,
+            },
             checkOnSave = true,
             check = {
               command = "clippy",
