@@ -31,6 +31,7 @@ return {
         "prismals",
         -- "gopls",
         "zls",
+        "glsl_analyzer",
       },
       -- v2 replacement for the old `handlers` table. Installed servers get
       -- vim.lsp.enable()'d automatically; rust_analyzer is left to rustaceanvim.

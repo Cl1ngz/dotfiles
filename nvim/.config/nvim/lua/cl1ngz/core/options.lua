@@ -32,7 +32,7 @@ opt.smartcase = true
 opt.updatetime = 250
 opt.timeoutlen = 300
 
--- Better netrw (though you use nvim-tree)
+-- Better netrw
 vim.g.netrw_liststyle = 3
 
 vim.api.nvim_create_autocmd("User", {
@@ -40,4 +40,17 @@ vim.api.nvim_create_autocmd("User", {
   callback = function()
     vim.cmd("packadd nvim.undotree")
   end,
+})
+
+-- Normalize glsl filetypes
+vim.filetype.add({
+  extension = {
+    glsl = "glsl",
+    vert = "glsl",
+    frag = "glsl",
+    geom = "glsl",
+    tesc = "glsl",
+    tese = "glsl",
+    comp = "glsl",
+  },
 })

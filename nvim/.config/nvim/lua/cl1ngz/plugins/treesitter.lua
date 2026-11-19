@@ -43,6 +43,7 @@ return {
       "vimdoc",
       "yaml",
       "zig",
+      "glsl",
     }
 
     local installed = ts.get_installed()
